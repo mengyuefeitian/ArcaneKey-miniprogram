@@ -1,0 +1,32 @@
+<view class="page" style="--accent:{{accentColor}}">
+  <view class="header">
+    <view class="back-btn" bindtap="onBack">×</view>
+    <text class="title">开通会员</text>
+  </view>
+  <scroll-view class="content" scroll-y>
+    <block wx:if="{{isMember}}">
+      <view class="member-status" style="background:{{accentColor}}18;border-color:{{accentColor}}30">
+        <text class="status-title" style="color:{{accentColor}}">✨ 您已是会员</text>
+        <text class="status-desc">有效期至 {{memberExpiryText}}
+享受无限制添加、云端备份、数据同步等特权</text>
+      </view>
+    </block>
+    <block wx:else>
+      <view class="price-section">
+        <view class="price-icon">👑</view>
+        <text class="price-amount">¥19.90</text>
+        <text class="price-unit">/年</text>
+      </view>
+      <view class="benefits">
+        <view class="benefit-item" wx:for="{{['无限制添加动态口令','加密备份数据导入导出','查看 Secret Key','云端数据每小时自动同步']}}" wx:key="*this">
+          <text class="benefit-check" style="color:{{accentColor}}">✓</text>
+          <text class="benefit-text">{{item}}</text>
+        </view>
+      </view>
+      <button class="pay-btn" style="background:linear-gradient(135deg,#f59e0b,#d97706)" bindtap="onPay">
+        立即开通会员 ¥19.90/年
+      </button>
+      <text class="pay-note">演示模式：点击直接开通</text>
+    </block>
+  </scroll-view>
+</view>

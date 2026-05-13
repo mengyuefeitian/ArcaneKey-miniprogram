@@ -1,0 +1,1 @@
+<view class="logo-wrap" style="{{style}}">{{letter}}</view>

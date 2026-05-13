@@ -1,0 +1,8 @@
+<view class="ring-wrap">
+  <svg width="34" height="34" style="position:absolute;top:0;left:0;transform:rotate(-90deg);">
+    <circle cx="17" cy="17" r="{{r}}" fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="2.5"/>
+    <circle cx="17" cy="17" r="{{r}}" fill="none" stroke="{{col}}" stroke-width="2.5"
+      stroke-dasharray="{{dash}} {{gap}}" stroke-linecap="round"/>
+  </svg>
+  <text class="ring-num" style="color:{{col}}">{{tl}}</text>
+</view>

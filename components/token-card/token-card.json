@@ -1,0 +1,5 @@
+{ "component": true, "usingComponents": {
+    "logo": "../logo/logo",
+    "countdown-ring": "../countdown-ring/countdown-ring"
+  }
+}

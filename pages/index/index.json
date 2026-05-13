@@ -1,0 +1,9 @@
+{
+  "usingComponents": {
+    "logo": "../../components/logo/logo",
+    "countdown-ring": "../../components/countdown-ring/countdown-ring",
+    "token-card": "../../components/token-card/token-card",
+    "bottom-nav": "../../components/bottom-nav/bottom-nav",
+    "toast": "../../components/toast/toast"
+  }
+}

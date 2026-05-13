@@ -1,0 +1,49 @@
+<view class="page" style="--accent:{{accentColor}}">
+  <view class="header">
+    <view class="back-btn" bindtap="onBack">×</view>
+    <text class="title">意见与建议</text>
+  </view>
+  <scroll-view class="content" scroll-y>
+    <!-- 反馈类型 -->
+    <view class="section">
+      <text class="section-label">反馈类型</text>
+      <view class="type-group">
+        <view class="type-btn {{type === '需求' ? 'active' : ''}}"
+          style="{{type === '需求' ? 'border-color:' + accentColor + '60;background:' + accentColor + '18;color:' + accentColor : ''}}"
+          bindtap="onTypeChange" data-type="需求">需求</view>
+        <view class="type-btn {{type === 'Bug' ? 'active' : ''}}"
+          style="{{type === 'Bug' ? 'border-color:' + accentColor + '60;background:' + accentColor + '18;color:' + accentColor : ''}}"
+          bindtap="onTypeChange" data-type="Bug">Bug</view>
+      </view>
+    </view>
+    <!-- 反馈内容 -->
+    <view class="section">
+      <text class="section-label">反馈内容 <text style="color:var(--accent)">*</text></text>
+      <textarea class="content-input" value="{{content}}" bindinput="onContentInput"
+        placeholder="请描述您的问题或建议（至少10个字，最多500字）" maxlength="500" auto-height/>
+      <text class="char-count {{content.length > 500 ? 'over-limit' : ''}}">{{content.length}}/500</text>
+    </view>
+    <!-- 图片附件 -->
+    <view class="section">
+      <text class="section-label">附件（可选，最多3张，单张≤10MB）</text>
+      <view class="image-list">
+        <view class="image-item" wx:for="{{images}}" wx:key="index">
+          <image class="image-thumb" src="{{item}}" mode="aspectFill"/>
+          <view class="image-remove" bindtap="onRemoveImage" data-index="{{index}}">×</view>
+        </view>
+        <view wx:if="{{images.length < 3}}" class="image-add" bindtap="onAddImage">+</view>
+      </view>
+    </view>
+    <!-- 联系方式 -->
+    <view class="section">
+      <text class="section-label">联系方式（选填，手机号或邮箱）</text>
+      <input class="contact-input" value="{{contact}}" bindinput="onContactInput" placeholder="手机号或邮箱"/>
+    </view>
+    <view class="submit-btn {{canSubmit ? '' : 'btn-disabled'}}"
+      style="background:{{canSubmit ? accentColor : '#191920'}};color:{{canSubmit ? '#fff' : 'rgba(238,238,245,0.3)'}}"
+      bindtap="onSubmit">
+      {{sending ? '提交中…' : '提交反馈'}}
+    </view>
+    <text class="submit-note">您的反馈将发送至开发团队，我们认真对待每一条建议</text>
+  </scroll-view>
+</view>

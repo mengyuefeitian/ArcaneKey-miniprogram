@@ -1,0 +1,6 @@
+<view class="toast-wrap" wx:if="{{message}}">
+  <view class="toast-inner">
+    <text class="toast-icon">{{type === 'error' ? '✕' : '✓'}}</text>
+    <text class="toast-text">{{message}}</text>
+  </view>
+</view>

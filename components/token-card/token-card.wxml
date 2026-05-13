@@ -1,0 +1,36 @@
+<view class="card">
+  <!-- Upper row: edit -->
+  <view class="card-top" bindtap="onEditTap">
+    <logo brand="{{token.brand}}" size="{{42}}"/>
+    <view class="card-info">
+      <text class="brand">{{token.brand}}</text>
+      <text class="account">{{token.account}}</text>
+    </view>
+    <countdown-ring time-left="{{timeLeft}}" accent-color="{{accentColor}}"/>
+  </view>
+
+  <view class="divider"/>
+
+  <!-- Lower row: copy -->
+  <view class="card-bottom {{pressed ? 'pressed' : ''}}"
+        bindtap="onCopyTap"
+        bindtouchstart="onPressStart"
+        bindtouchend="onPressEnd"
+        bindtouchcancel="onPressEnd">
+    <view class="otp-code-wrap">
+      <block wx:for="{{digitColors}}" wx:key="index">
+        <text class="otp-digit" style="color:{{item}}">{{curFmt[index]}}</text>
+      </block>
+    </view>
+    <view class="next-wrap">
+      <view class="copy-hint-row">
+        <view class="copy-icon-img"/>
+        <text class="copy-hint">点击复制</text>
+      </view>
+      <view class="next-row">
+        <text class="next-label">下一个</text>
+        <text class="next-code">{{nxtFmt}}</text>
+      </view>
+    </view>
+  </view>
+</view>

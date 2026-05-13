@@ -1,0 +1,89 @@
+.card {
+  background: #191920;
+  border-radius: 18px;
+  margin-bottom: 10px;
+  overflow: hidden;
+  border: 1px solid rgba(255,255,255,0.05);
+}
+.card-top {
+  display: flex;
+  align-items: center;
+  padding: 14px 16px 10px;
+  cursor: pointer;
+  gap: 12px;
+}
+.card-info { flex: 1; min-width: 0; }
+.brand {
+  display: block;
+  font-size: 15px;
+  font-weight: 650;
+  color: #eeeef5;
+  letter-spacing: 0.1px;
+}
+.account {
+  display: block;
+  font-size: 12px;
+  color: rgba(238,238,245,0.42);
+  margin-top: 2px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.divider {
+  height: 1px;
+  background: rgba(255,255,255,0.055);
+  margin: 0 16px;
+}
+.card-bottom {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 11px 16px 14px;
+  transition: background 0.12s;
+}
+.card-bottom.pressed { background: rgba(255,255,255,0.04); }
+.otp-code-wrap {
+  display: flex;
+  align-items: baseline;
+}
+.otp-digit {
+  font-size: 30px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  font-family: "SF Mono", "Fira Code", monospace;
+}
+.next-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+}
+.copy-hint-row { display: flex; align-items: center; gap: 3px; }
+.copy-icon-img {
+  width: 10px;
+  height: 10px;
+  background: rgba(238,238,245,0.28);
+  -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2' stroke-linecap='round'%3E%3Crect x='9' y='9' width='13' height='13' rx='2'/%3E%3Cpath d='M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1'/%3E%3C/svg%3E");
+  mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2' stroke-linecap='round'%3E%3Crect x='9' y='9' width='13' height='13' rx='2'/%3E%3Cpath d='M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1'/%3E%3C/svg%3E");
+  -webkit-mask-size: contain;
+  -webkit-mask-repeat: no-repeat;
+  mask-size: contain;
+  mask-repeat: no-repeat;
+}
+.copy-hint {
+  font-size: 10px;
+  color: rgba(238,238,245,0.28);
+}
+.next-row {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+.next-label { font-size: 10px; color: rgba(238,238,245,0.28); }
+.next-code {
+  font-size: 13px;
+  font-weight: 600;
+  color: rgba(238,238,245,0.32);
+  font-family: "SF Mono", monospace;
+  letter-spacing: 2px;
+}

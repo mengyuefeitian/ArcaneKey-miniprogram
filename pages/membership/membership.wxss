@@ -1,0 +1,18 @@
+.page { min-height: 100vh; background: #0d0d12; }
+.header { display: flex; align-items: center; padding: 14px 16px; gap: 12px; }
+.back-btn { background: rgba(255,255,255,0.08); border-radius: 11px; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; color: rgba(238,238,245,0.75); font-size: 20px; }
+.title { font-size: 17px; font-weight: 650; color: #eeeef5; }
+.content { padding: 0 20px; }
+.price-section { text-align: center; padding: 32px 0 24px; }
+.price-icon { font-size: 48px; margin-bottom: 12px; }
+.price-amount { font-size: 36px; font-weight: 800; color: #eeeef5; }
+.price-unit { font-size: 14px; color: rgba(238,238,245,0.4); }
+.benefits { background: #191920; border-radius: 16px; padding: 16px; margin-bottom: 24px; }
+.benefit-item { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+.benefit-check { font-weight: 700; font-size: 16px; }
+.benefit-text { font-size: 14px; color: rgba(238,238,245,0.7); }
+.pay-btn { width: 100%; height: 50px; border-radius: 15px; border: none; font-size: 16px; font-weight: 700; color: #fff; margin-bottom: 12px; }
+.pay-note { font-size: 11px; color: rgba(238,238,245,0.3); text-align: center; display: block; padding-bottom: 40px; }
+.member-status { padding: 16px; border-radius: 16px; margin-top: 24px; }
+.status-title { font-size: 16px; font-weight: 700; display: block; margin-bottom: 8px; }
+.status-desc { font-size: 13px; color: rgba(238,238,245,0.5); display: block; line-height: 1.7; white-space: pre-line; }
