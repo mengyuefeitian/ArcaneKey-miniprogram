@@ -49,10 +49,17 @@ Page({
 
     Promise.all(uploadPromises)
       .then(fileResults => {
-        const fileIds = fileResults.map(r => r.fileID);
+        const imageUrls = fileResults.map(r => r.fileID);
         return wx.cloud.callFunction({
           name: 'sendFeedback',
-          data: { type, content, contact, fileIds, userInfo: app.globalData.userInfo },
+          data: {
+            feedbackId: Date.now().toString(),
+            type,
+            content,
+            contactInfo: contact,
+            nickName: app.globalData.userInfo?.nickName || '',
+            imageUrls
+          },
         });
       })
       .then(() => {
