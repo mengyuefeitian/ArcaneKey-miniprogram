@@ -1,7 +1,7 @@
 {
   "libVersion": "3.15.2",
   "condition": {},
-  "projectname": "miniprogram",
+  "projectname": "ArcaneKey",
   "setting": {
     "urlCheck": true,
     "coverView": true,

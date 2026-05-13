@@ -44,7 +44,7 @@ App({
     if (theme) this.globalData.theme = theme;
 
     // 初始化云开发
-    wx.cloud.init({ env: 'your-env-id' });
+    wx.cloud.init({ env: 'cloud1-d6gxlvduza77569eb' });
 
     // 加载会员状态
     const memberData = wx.getStorageSync('ak_membership');
