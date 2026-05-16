@@ -28,8 +28,16 @@ App({
   },
 
   onLaunch() {
+    // 一次性迁移：清除体验版遗留的测试数据
+    if (!wx.getStorageSync('ak_release_v1')) {
+      wx.removeStorageSync('ak_tokens');
+      wx.removeStorageSync('ak_tokens_timestamp');
+      wx.removeStorageSync('ak_pending_sync_tasks');
+      wx.setStorageSync('ak_release_v1', true);
+    }
+
     const stored = loadTokens();
-    this.globalData.tokens = stored && stored.length ? stored : INITIAL_TOKENS;
+    this.globalData.tokens = stored || [];
     const theme = loadTheme();
     if (theme) this.globalData.theme = theme;
 
