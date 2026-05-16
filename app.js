@@ -28,10 +28,16 @@ App({
   },
 
   onLaunch() {
-    // 一次性迁移：清除体验版遗留的测试数据
+    // 一次性迁移：过滤体验版遗留的测试账号（alice@ 账号），保留用户自己添加的真实数据
     if (!wx.getStorageSync('ak_release_v1')) {
-      wx.removeStorageSync('ak_tokens');
-      wx.removeStorageSync('ak_tokens_timestamp');
+      try {
+        const raw = wx.getStorageSync('ak_tokens');
+        if (Array.isArray(raw)) {
+          const TEST_IDS = new Set(['1', '2', '3', '4', '5', '6']);
+          const real = raw.filter(t => !TEST_IDS.has(t.id) && !(t.account || '').includes('alice'));
+          wx.setStorageSync('ak_tokens', real);
+        }
+      } catch (_) {}
       wx.removeStorageSync('ak_pending_sync_tasks');
       wx.setStorageSync('ak_release_v1', true);
     }
