@@ -2,14 +2,7 @@ const { loadTokens, saveTokens, loadTheme, saveTheme } = require('./utils/storag
 
 const APP_NAME = '星枢令';
 
-const INITIAL_TOKENS = [
-  { id: '1', brand: 'Google',    account: 'alice@gmail.com',   secret: 'JBSWY3DPEHPK3PXP' },
-  { id: '2', brand: 'Microsoft', account: 'alice@outlook.com', secret: 'MFRA22LDNRSXG5AP' },
-  { id: '3', brand: 'GitHub',    account: 'alicedev',          secret: 'NZXSAYLBNFXWY3DP' },
-  { id: '4', brand: 'Apple',     account: 'alice@icloud.com',  secret: 'OJSXI33PNZXE5LN' },
-  { id: '5', brand: 'Stripe',    account: 'alice@company.com', secret: 'KRUGS4TANFXGK4TF' },
-  { id: '6', brand: 'Discord',   account: 'alice#0042',        secret: 'LBSWY3DPEHPK3PXP' },
-];
+const INITIAL_TOKENS = [];
 
 const THEMES = [
   { name: '海洋蓝', color: '#4080D0' },
