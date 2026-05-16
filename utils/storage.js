@@ -1,5 +1,5 @@
-var TOKENS_KEY = 'auth_tokens';
-var THEME_KEY  = 'auth_theme';
+var TOKENS_KEY = 'ak_tokens';
+var THEME_KEY  = 'ak_theme';
 
 function loadTokens() {
   try { return wx.getStorageSync(TOKENS_KEY) || null; } catch (e) { return null; }

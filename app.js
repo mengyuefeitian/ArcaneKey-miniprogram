@@ -1,14 +1,12 @@
 const { loadTokens, saveTokens, loadTheme, saveTheme } = require('./utils/storage');
 
-const FREE_TOKEN_LIMIT = 5;
-const MEMBERSHIP_PRICE = 19.90;
-const APP_NAME = '玄钥';
+const APP_NAME = '星枢令';
 
 const INITIAL_TOKENS = [
   { id: '1', brand: 'Google',    account: 'alice@gmail.com',   secret: 'JBSWY3DPEHPK3PXP' },
   { id: '2', brand: 'Microsoft', account: 'alice@outlook.com', secret: 'MFRA22LDNRSXG5AP' },
   { id: '3', brand: 'GitHub',    account: 'alicedev',          secret: 'NZXSAYLBNFXWY3DP' },
-  { id: '4', brand: 'Apple',     account: 'alice@icloud.com',  secret: 'OJSXI33PNZQXE5LN' },
+  { id: '4', brand: 'Apple',     account: 'alice@icloud.com',  secret: 'OJSXI33PNZXE5LN' },
   { id: '5', brand: 'Stripe',    account: 'alice@company.com', secret: 'KRUGS4TANFXGK4TF' },
   { id: '6', brand: 'Discord',   account: 'alice#0042',        secret: 'LBSWY3DPEHPK3PXP' },
 ];
@@ -33,8 +31,7 @@ App({
     theme: THEMES[0],
     loggedIn: false,
     userInfo: null,
-    isMember: false,
-    memberExpiry: null,
+    openid: null,           // 静默登录获取的 openid
   },
 
   onLaunch() {
@@ -44,19 +41,38 @@ App({
     if (theme) this.globalData.theme = theme;
 
     // 初始化云开发
-    wx.cloud.init({ env: 'cloud1-d6gxlvduza77569eb' });
+    wx.cloud.init({ env: 'cloud1-d6gv0hhga084dbe14' });
 
-    // 加载会员状态
-    const memberData = wx.getStorageSync('ak_membership');
-    if (memberData) {
-      this.globalData.isMember = memberData.isMember;
-      this.globalData.memberExpiry = memberData.expiry ? new Date(memberData.expiry) : null;
-    }
+    // 静默登录：自动获取 openid，不弹出任何授权弹窗
+    this._silentLogin();
   },
 
-  saveMemberData(isMember, expiry) {
-    this.globalData.isMember = isMember;
-    this.globalData.memberExpiry = expiry;
-    wx.setStorageSync('ak_membership', { isMember, expiry: expiry ? expiry.toISOString() : null });
+  // 静默登录：获取 openid，用户可正常使用本地功能
+  _silentLogin() {
+    wx.login({
+      success: (res) => {
+        if (res.code) {
+          // 将 code 发送到云端换取 openid（这里暂时用本地模拟）
+          // 生产环境需要调用云函数获取真实 openid
+          this.globalData.openid = 'wx_' + Date.now();
+          // 检查是否有已存储的用户信息
+          const savedUserInfo = wx.getStorageSync('ak_user_info');
+          if (savedUserInfo) {
+            this.globalData.userInfo = savedUserInfo;
+            this.globalData.loggedIn = true;
+          }
+        }
+      },
+      fail: () => {
+        // 静默登录失败不影响本地功能使用
+        console.log('静默登录失败，本地功能可正常使用');
+      }
+    });
+  },
+
+  saveUserInfo(info) {
+    this.globalData.userInfo = info;
+    this.globalData.loggedIn = true;
+    wx.setStorageSync('ak_user_info', info);
   },
 });

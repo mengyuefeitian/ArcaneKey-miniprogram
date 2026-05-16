@@ -1,7 +1,7 @@
 <view class="page" style="--accent:{{accentColor}}">
 
   <!-- ═══ HOME SCREEN ═══ -->
-  <block wx:if="{{screen === 'home'}}">
+  <block wx:if="{{screen === 'home' && !showLoginModal && !showAccountModal && !editToken && !showQRCodeModal}}">
     <view class="screen">
       <!-- Header -->
       <view class="home-header">
@@ -147,12 +147,10 @@
       <view style="padding:20px 20px 0">
         <!-- Product branding -->
         <view class="product-section">
-          <view class="product-logo" style="background:{{accentColor}};box-shadow:0 8px 32px {{accentColor}}55">
-            <text style="font-size:32px;color:#fff;font-weight:800">玄</text>
-          </view>
-          <text class="product-name">玄钥</text>
-          <text class="product-subtitle">玄钥：身份验证器</text>
-          <text class="product-desc">为你所有的重要账号（如腾讯云、阿里云、AI账号、游戏等）配备了一把"动态的、每30秒换一次的数字钥匙"</text>
+          <image class="product-logo-img" src="/images/logo.png" mode="aspectFit"/>
+          <text class="product-name">星枢令</text>
+          <text class="product-subtitle">星枢令：身份验证器</text>
+          <text class="product-desc">为你所有的重要账号配备一把动态数字密码，每30秒自动更新，让登录更安全便捷，有效防范密码泄露风险，守护你的数字资产安全。</text>
         </view>
 
         <!-- Account info -->
@@ -167,7 +165,6 @@
               </view>
               <view style="flex:1">
                 <text style="font-size:15px;color:#eeeef5;font-weight:600">{{userInfo.name}}</text>
-                <text wx:if="{{userInfo.phone}}" style="display:block;font-size:12px;color:rgba(238,238,245,0.4);margin-top:2px">{{userInfo.phone}}</text>
               </view>
             </view>
           </block>
@@ -183,18 +180,9 @@
 
         <!-- Menu -->
         <view class="menu-group">
-          <view class="menu-item" data-id="membership" bindtap="onMenuTap" style="{{isMember ? 'border-left:3px solid ' + accentColor : ''}}">
-            <text class="menu-icon">👑</text>
-            <view style="flex:1">
-              <text class="menu-label">{{isMember ? '会员特权' : '开通会员'}}</text>
-              <text class="menu-desc">{{isMember ? '有效期至 ' + memberExpiryText : '¥19.90/年，无限制添加'}}</text>
-            </view>
-            ›
-          </view>
-          <view class="menu-divider"/>
-          <view wx:for="{{[{id:'account',icon:'👤',label:'账号管理',desc:loggedIn ? '管理你的账号信息' : '登录后可用',locked:true},{id:'backup',icon:'☁️',label:'备份数据',desc:isMember ? '加密备份到云端' : '会员专属',locked:true},{id:'import',icon:'📥',label:'导入备份',desc:isMember ? '从云端恢复' : '会员专属',locked:true},{id:'theme',icon:'🎨',label:'皮肤主题',desc:currentTheme.name,locked:false}]}}" wx:key="id" class="menu-item {{item.locked && !loggedIn ? 'menu-disabled' : ''}}"
+          <view wx:for="{{[{id:'account',iconClass:'menu-icon-account',label:'账号管理',desc:loggedIn ? '管理你的账号信息' : '登录后可用',locked:true},{id:'sync',iconClass:'menu-icon-sync',label:'数据同步',desc:lastSyncTime || '云端同步',locked:true},{id:'backup',iconClass:'menu-icon-export',label:'备份数据',desc:'加密备份到云端',locked:true},{id:'import',iconClass:'menu-icon-import',label:'导入备份',desc:'从云端恢复',locked:true},{id:'theme',iconClass:'menu-icon-theme',label:'皮肤主题',desc:currentTheme.name,locked:false}]}}" wx:key="id" class="menu-item {{item.locked && !loggedIn ? 'menu-disabled' : ''}}"
               data-id="{{item.id}}" data-locked="{{item.locked}}" bindtap="onMenuTap">
-            <text class="menu-icon">{{item.icon}}</text>
+            <view class="menu-icon-svg {{item.iconClass}}" style="background-color:{{accentColor}}"></view>
             <view style="flex:1">
               <text class="menu-label">{{item.label}}</text>
               <text class="menu-desc">{{item.locked && !loggedIn ? '登录后可用' : item.desc}}</text>
@@ -203,7 +191,7 @@
             <view wx:if="{{item.id !== 'theme'}}" class="menu-divider"/>
           </view>
           <view class="menu-item" data-id="feedback" bindtap="onMenuTap">
-            <text class="menu-icon">💬</text>
+            <view class="menu-icon-svg menu-icon-feedback" style="background-color:{{accentColor}}"></view>
             <view style="flex:1">
               <text class="menu-label">意见与建议</text>
               <text class="menu-desc">向我们反馈问题或建议</text>
@@ -233,18 +221,8 @@
               <text class="account-info-label">昵称</text>
               <text class="account-info-value">{{userInfo.name}}</text>
             </view>
-            <view class="account-info-row">
-              <text class="account-info-label">手机号</text>
-              <text class="account-info-value">{{userInfo.phone || '未绑定'}}</text>
-            </view>
-            <view wx:if="{{userInfo.wechatLogin}}" class="account-info-row">
-              <text class="account-info-label">微信</text>
-              <text class="account-info-value" style="color:#07C160">已绑定</text>
-            </view>
-            <view wx:else class="account-info-row">
-              <text class="account-info-label">微信</text>
-              <text class="account-info-value" style="color:{{accentColor}}" bindtap="onBindWechat">点击绑定</text>
-            </view>
+            <!-- 修改昵称按钮 -->
+            <view class="primary-btn" style="background:{{accentColor}};margin-top:8px" bindtap="onEditNicknameFromAccount">修改昵称</view>
           </view>
         </view>
 
@@ -273,17 +251,17 @@
         <input class="field-input" value="{{editForm.account}}" data-field="account" bindinput="onEditFormInput" placeholder-class="search-placeholder"/>
       </view>
       <view class="field-wrap">
-        <text class="field-label">Secret Key（只读）
-          <text wx:if="{{isMember}}" style="color:{{accentColor}};font-size:11px;margin-left:6px" bindtap="onToggleEditSecret">
-            {{editSecretVisible ? '隐藏' : '查看'}}
-          </text>
-        </text>
-        <view class="field-input readonly-field">
-          <text class="mono" style="line-height:44px;font-size:13px;color:{{editSecretVisible ? '#eeeef5' : 'rgba(238,238,245,0.4)'}};letter-spacing:1px">
-            {{editSecretVisible ? editToken.secret : editSecretMask}}
-          </text>
+        <text class="field-label">Secret Key</text>
+        <input class="field-input mono" disabled value="{{editSecretVisible ? editToken.secret : editSecretMask}}" placeholder-class="search-placeholder"/>
+        <!-- 操作按钮放在输入框下方 -->
+        <view style="display:flex;gap:12px;margin-top:8px">
+          <view class="secret-action-btn" style="color:{{accentColor}}" bindtap="onToggleEditSecret">
+            {{editSecretVisible ? '👁️ 隐藏' : '👁️ 查看'}}
+          </view>
+          <view class="secret-action-btn" style="color:{{accentColor}}" bindtap="onShowQRCode">
+            📱 二维码
+          </view>
         </view>
-        <text wx:if="{{!isMember}}" style="font-size:11px;color:rgba(238,238,245,0.25);margin-top:4px">🔒 开通会员可查看密钥</text>
       </view>
       <view style="height:20px"/>
     </view>
@@ -304,65 +282,62 @@
   <!-- ═══ LOGIN MODAL ═══ -->
   <view wx:if="{{showLoginModal}}" class="full-modal">
     <view class="modal-header">
-      <view wx:if="{{loginStep > 1}}" class="icon-btn" bindtap="onLoginBack">‹</view>
-      <view wx:else class="icon-btn" bindtap="onCloseLogin">×</view>
-      <text class="modal-title">登录账号</text>
-      <view class="login-step-indicator">
-        <text class="step-num {{loginStep === 1 ? 'active' : ''}}">1</text>
-        <view class="step-dot"/>
-        <text class="step-num {{loginStep === 2 ? 'active' : ''}}">2</text>
-      </view>
+      <view class="icon-btn" bindtap="onCloseLogin">×</view>
+      <text class="modal-title">设置头像昵称</text>
     </view>
     <view style="padding:0 20px;flex:1;display:flex;flex-direction:column;gap:16px">
-      <!-- Step 1: Avatar & Nickname -->
-      <block wx:if="{{loginStep === 1}}">
-        <view style="display:flex;flex-direction:column;align-items:center;gap:16px;padding-top:24px">
-          <button class="avatar-picker-btn" open-type="chooseAvatar" bindchooseavatar="onChooseAvatar">
-            <image wx:if="{{loginAvatar}}" class="login-avatar-img" src="{{loginAvatar}}" mode="aspectFill"/>
-            <view wx:else class="login-avatar-placeholder" style="background:{{accentColor}}">
-              <text style="font-size:32px;color:#fff;font-weight:700">玄</text>
-            </view>
-            <text class="avatar-hint">点击选择头像</text>
-          </button>
-          <view class="field-wrap" style="width:100%">
-            <text class="field-label">昵称</text>
-            <input class="field-input nickname-input" type="nickname" value="{{loginNickname}}"
-              bindinput="onNicknameInput" placeholder="点击获取微信昵称" placeholder-class="search-placeholder"/>
+      <!-- 隐私协议同意 -->
+      <view style="padding-top:16px">
+        <view style="display:flex;align-items:center;gap:8px;padding:12px;background:#191920;border-radius:12px;border:1px solid {{loginPrivacyAgreed ? accentColor + '30' : 'rgba(255,255,255,0.05)'}}" bindtap="onLoginPrivacyToggle">
+          <view style="width:20px;height:20px;min-width:20px;border-radius:4px;display:flex;align-items:center;justify-content:center;border:1.5px solid {{loginPrivacyAgreed ? accentColor : 'rgba(238,238,245,0.3)'}};background:{{loginPrivacyAgreed ? accentColor : 'transparent'}}">
+            <text wx:if="{{loginPrivacyAgreed}}" style="font-size:10px;color:#fff;font-weight:700">✓</text>
           </view>
-          <view class="primary-btn" style="background:{{loginAvatar && loginNickname ? accentColor : '#191920'}};color:{{loginAvatar && loginNickname ? '#fff' : 'rgba(238,238,245,0.3)'}}"
-            bindtap="onLoginStep2">下一步</view>
+          <text style="flex:1;font-size:13px;line-height:20px;color:{{loginPrivacyAgreed ? 'rgba(238,238,245,0.5)' : 'rgba(238,238,245,0.35)'}}">
+            我已阅读并同意 <text style="color:{{accentColor}};font-weight:500">《用户协议》</text> 和 <text style="color:{{accentColor}};font-weight:500">《隐私保护协议》</text>
+          </text>
         </view>
-      </block>
+      </view>
 
-      <!-- Step 2: Privacy & Phone -->
-      <block wx:if="{{loginStep === 2}}">
-        <view style="display:flex;flex-direction:column;align-items:center;gap:16px;padding-top:24px">
+      <!-- 头像和昵称设置（隐私同意后可见） -->
+      <view wx:if="{{loginPrivacyAgreed}}" style="display:flex;flex-direction:column;align-items:center;gap:16px;padding-top:8px">
+        <text wx:if="{{loggedIn}}" style="font-size:12px;color:{{accentColor}};text-align:center;font-weight:500">
+          已登录，可修改头像和昵称
+        </text>
+        <text wx:else style="font-size:12px;color:{{accentColor}};text-align:center;font-weight:500">
+          点击头像按钮即可获取微信头像
+        </text>
+        <button class="avatar-picker-btn" open-type="chooseAvatar" bindchooseavatar="onChooseAvatar">
           <image wx:if="{{loginAvatar}}" class="login-avatar-img" src="{{loginAvatar}}" mode="aspectFill"/>
-          <view wx:else class="login-avatar-placeholder" style="background:{{accentColor}}">
-            <text style="font-size:32px;color:#fff;font-weight:700">玄</text>
-          </view>
-          <text style="font-size:15px;color:#eeeef5;font-weight:500">{{loginNickname}}</text>
-          <text style="font-size:13px;color:rgba(238,238,245,0.35)">使用微信账号登录</text>
-
-          <!-- Privacy agreement -->
-          <view style="display:flex;align-items:flex-start;gap:8px;width:100%;padding:0 12px" bindtap="onPrivacyToggle">
-            <view style="width:18px;height:18px;border-radius:4px;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px;border:1.5px solid {{privacyAgreed ? accentColor : 'rgba(238,238,245,0.3)'}};background:{{privacyAgreed ? accentColor : 'transparent'}}">
-              <text wx:if="{{privacyAgreed}}" style="font-size:10px;color:#fff;font-weight:700">✓</text>
-            </view>
-            <view style="flex:1">
-              <text style="font-size:12px;color:rgba(238,238,245,0.45)">我已阅读并同意 </text>
-              <text style="font-size:12px;color:{{accentColor}};font-weight:500">《隐私保护协议》</text>
-              <text style="font-size:12px;color:rgba(238,238,245,0.45)">，授权获取手机号信息</text>
-            </view>
-          </view>
-
-          <!-- WeChat login button -->
-          <button class="wechat-login-btn" open-type="getPhoneNumber" bindgetphonenumber="onWeChatPhone" style="background:{{privacyAgreed ? '#07C160' : '#191920'}};color:{{privacyAgreed ? '#fff' : 'rgba(238,238,245,0.3)'}}">微信一键登录</button>
-          <text style="font-size:11px;color:rgba(238,238,245,0.3)">将获取微信绑定的手机号</text>
+          <image wx:else class="login-avatar-placeholder-img" src="/images/logo.png" mode="aspectFit"/>
+          <text class="avatar-hint">{{loginAvatar ? '✓ 已获取' : '点击获取头像'}}</text>
+        </button>
+        <view class="field-wrap" style="width:100%">
+          <text class="field-label">昵称（可修改）</text>
+          <input class="field-input nickname-input" type="nickname" value="{{loginNickname}}"
+            bindinput="onNicknameInput" bindfocus="onNicknameFocus" placeholder="可输入或使用微信昵称" placeholder-class="search-placeholder"/>
         </view>
-      </block>
+        <!-- 使用微信昵称快捷按钮 -->
+        <view style="width:100%;display:flex;gap:8px">
+          <view style="flex:1;position:relative">
+            <input style="width:100%;height:36px;border-radius:8px;background:rgba(238,238,245,0.08);border:1px solid rgba(238,238,245,0.1);color:rgba(238,238,245,0.35);font-size:12px;text-align:center" type="nickname" placeholder="" value="" bindinput="onUseWxNickname"/>
+            <text style="position:absolute;top:0;left:0;right:0;height:36px;display:flex;align-items:center;justify-content:center;font-size:12px;color:rgba(238,238,245,0.45);pointer-events:none">使用微信昵称</text>
+          </view>
+        </view>
+        <view class="primary-btn" style="background:{{loginAvatar ? accentColor : '#191920'}};color:{{loginAvatar ? '#fff' : 'rgba(238,238,245,0.3)'}}"
+          bindtap="onSaveProfile">{{loginAvatar ? '保存设置' : '请先获取头像'}}</view>
+      </view>
+
+      <!-- 隐私未同意时的提示 -->
+      <view wx:else style="display:flex;flex-direction:column;align-items:center;gap:12px;padding:40px 0">
+        <text style="font-size:14px;color:rgba(238,238,245,0.35);text-align:center">
+          同意后，昵称将自动随机生成，头像需点击获取
+        </text>
+      </view>
+
+      <view class="skip-btn" bindtap="onSkipLogin">暂不设置</view>
     </view>
   </view>
+
 
   <!-- ═══ BACKUP MODAL ═══ -->
   <view wx:if="{{showBackupModal}}" class="full-modal">
@@ -426,12 +401,78 @@
     </view>
   </view>
 
+  <!-- ═══ SYNC CONFIG MODAL ═══ -->
+  <view wx:if="{{showSyncModal}}" class="full-modal">
+    <view class="modal-header">
+      <view class="icon-btn" bindtap="onCloseSync">×</view>
+      <text class="modal-title">数据同步</text>
+    </view>
+    <view style="padding:0 20px;flex:1;display:flex;flex-direction:column;gap:16px">
+      <!-- Sync Status -->
+      <view class="sync-config-card" style="border-color:{{accentColor}}20">
+        <view style="flex:1">
+          <text style="font-size:14px;color:#eeeef5;font-weight:500">同步状态</text>
+          <text style="display:block;font-size:12px;color:rgba(238,238,245,0.35);margin-top:2px">
+            {{lastSyncTime ? '上次同步：' + lastSyncTime : '尚未同步'}}
+            <text wx:if="{{pendingSyncCount > 0}}" style="color:#f59e0b"> · {{pendingSyncCount}} 个待同步任务</text>
+            <text wx:if="{{pendingUploadCount > 0}}" style="color:#f59e0b"> · {{pendingUploadCount}} 条待上传</text>
+          </text>
+        </view>
+        <view style="width:8px;height:8px;border-radius:50%;background:{{lastSyncTime ? accentColor : 'rgba(238,238,245,0.2)'}}"></view>
+      </view>
+
+      <!-- Sync Toggle -->
+      <view class="sync-config-card" style="border-color:rgba(255,255,255,0.08)">
+        <view style="flex:1">
+          <text style="font-size:14px;color:#eeeef5;font-weight:500">自动同步</text>
+          <text style="display:block;font-size:12px;color:rgba(238,238,245,0.35);margin-top:2px">
+            每30分钟从云端同步到本地
+          </text>
+        </view>
+        <view class="sync-switch {{syncEnabled ? 'sync-switch-on' : ''}}" style="background:{{syncEnabled ? accentColor : 'rgba(255,255,255,0.1)'}}" bindtap="onToggleSync">
+          <view class="sync-switch-dot" style="transform:translateX({{syncEnabled ? '20px' : '0'}})"></view>
+        </view>
+      </view>
+
+      <!-- Manual Sync Button -->
+      <view class="sync-config-card" style="border-color:rgba(255,255,255,0.08)">
+        <view style="flex:1">
+          <text style="font-size:14px;color:#eeeef5;font-weight:500">同步到本地</text>
+          <text style="display:block;font-size:12px;color:rgba(238,238,245,0.35);margin-top:2px">
+            立即从云端拉取最新数据
+          </text>
+        </view>
+        <view class="sync-btn {{syncStatus === 'syncing' ? 'sync-btn-loading' : ''}}"
+          style="background:{{syncStatus === 'syncing' ? '#191920' : accentColor}};color:{{syncStatus === 'syncing' ? 'rgba(238,238,245,0.4)' : '#fff'}}"
+          bindtap="onSyncToLocal">
+          {{syncStatus === 'syncing' ? '同步中...' : '立即同步'}}
+        </view>
+      </view>
+
+      <!-- Sync Info -->
+      <view class="info-banner">ℹ️ 自动同步以云端数据为准。本地新增数据会优先上传到云端，上传成功后才会从云端同步到本地。</view>
+
+      <!-- Upload Pending -->
+      <view wx:if="{{pendingUploadCount > 0}}" class="sync-config-card" style="border-color:#f59e0b30">
+        <view style="flex:1">
+          <text style="font-size:14px;color:#f59e0b;font-weight:500">待上传数据</text>
+          <text style="display:block;font-size:12px;color:rgba(238,238,245,0.35);margin-top:2px">
+            {{pendingUploadCount}} 条本地新增数据待上传
+          </text>
+        </view>
+        <view class="sync-btn" style="background:{{accentColor}};color:#fff" bindtap="onUploadToCloud">
+          立即上传
+        </view>
+      </view>
+    </view>
+  </view>
+
   <!-- ═══ DELETE CONFIRMATION MODAL ═══ -->
   <view wx:if="{{showDeleteModal}}" class="delete-modal-overlay">
     <view class="delete-dialog">
       <text class="delete-title">确认删除</text>
-      <text class="delete-content">确定要删除「{{deleteTarget.brand}}」吗？{{isMember ? '\n选择删除方式：' : '\n此操作不可撤销'}}</text>
-      <block wx:if="{{isMember}}">
+      <text class="delete-content">确定要删除「{{deleteTarget.brand}}」吗？{{loggedIn ? '\n可选择同步删除云端数据' : ''}}</text>
+      <block wx:if="{{loggedIn}}">
         <view class="delete-btns">
           <view class="delete-btn local" bindtap="executeDeleteLocal">仅本地</view>
           <view class="delete-btn cloud" bindtap="executeDeleteCloud">本地+云端</view>
@@ -441,9 +482,24 @@
       <block wx:else>
         <view class="delete-btns">
           <view class="delete-btn cancel" bindtap="cancelDelete">取消</view>
-          <view class="delete-btn confirm" bindtap="executeDelete">确认删除</view>
+          <view class="delete-btn confirm" bindtap="executeDelete">删除</view>
         </view>
       </block>
+    </view>
+  </view>
+
+  <!-- ═══ QR CODE MODAL ═══ -->
+  <view wx:if="{{showQRCodeModal}}" class="delete-modal-overlay" bindtap="onCloseQRCode">
+    <view class="delete-dialog" style="padding: 24px; width: 85%; max-width: 320px;" catchtap="">
+      <text class="delete-title">分享二维码</text>
+      <text class="delete-content" style="margin-bottom: 20px;">扫描此二维码可添加「{{editToken.brand}}」账号</text>
+      <view class="qr-box" style="width: 256px; height: 256px; margin: 0 auto; background: #fff; border-radius: 8px;">
+        <canvas type="2d" id="qrcode-canvas" style="width: 256px; height: 256px;"></canvas>
+      </view>
+      <text style="font-size: 12px; color: rgba(238,238,245,0.35); margin-top: 12px; text-align: center; display: block;">支持 Google Authenticator / Authy 等 TOTP 应用扫描</text>
+      <view style="margin-top: 20px;">
+        <view class="delete-btn cancel" style="width: 100%;" bindtap="onCloseQRCode">关闭</view>
+      </view>
     </view>
   </view>
 

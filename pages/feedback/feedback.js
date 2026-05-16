@@ -21,12 +21,23 @@ Page({
   onAddImage() {
     const { images } = this.data;
     if (images.length >= 3) return;
-    wx.chooseMedia({
-      count: 3 - images.length, mediaType: ['image'], sizeType: ['compressed'],
-      success: (res) => {
-        const paths = res.tempFiles.map(f => f.tempFilePath);
-        this.setData({ images: [...images, ...paths] });
+    // 先调用隐私授权检查
+    wx.requirePrivacyAuthorize({
+      success: () => {
+        wx.chooseMedia({
+          count: 3 - images.length, mediaType: ['image'], sizeType: ['compressed'],
+          success: (res) => {
+            const paths = res.tempFiles.map(f => f.tempFilePath);
+            this.setData({ images: [...images, ...paths] });
+          },
+          fail: () => {
+            wx.showToast({ title: '选择图片取消', icon: 'none' });
+          }
+        });
       },
+      fail: () => {
+        wx.showToast({ title: '需要授权才能上传图片', icon: 'none' });
+      }
     });
   },
 
@@ -36,6 +47,11 @@ Page({
   },
 
   onSubmit() {
+    // 防止重复提交
+    if (this.data.sending) {
+      return;
+    }
+
     const { type, content, images, contact, canSubmit } = this.data;
     if (!canSubmit) {
       if (content.length < 10) { wx.showToast({ title: '至少10个字', icon: 'none' }); }
@@ -57,16 +73,19 @@ Page({
             type,
             content,
             contactInfo: contact,
-            nickName: app.globalData.userInfo?.nickName || '',
+            nickName: app.globalData.userInfo?.name || '',
             imageUrls
           },
         });
       })
       .then(() => {
-        wx.showToast({ title: '反馈已提交', icon: 'success' });
-        wx.navigateBack();
+        this.setData({ sending: false });
+        wx.showToast({ title: '反馈已提交', icon: 'success', duration: 2000 });
+        setTimeout(() => wx.navigateBack(), 2000);
       })
-      .catch(() => { wx.showToast({ title: '提交失败', icon: 'error' }); })
-      .finally(() => { this.setData({ sending: false }); });
+      .catch((err) => {
+        this.setData({ sending: false });
+        wx.showToast({ title: '提交失败：' + (err.message || '网络错误'), icon: 'none', duration: 3000 });
+      });
   },
 });

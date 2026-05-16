@@ -4,6 +4,13 @@
   height: 34px;
   flex-shrink: 0;
 }
+.ring-canvas {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 34px;
+  height: 34px;
+}
 .ring-num {
   position: absolute;
   inset: 0;
@@ -14,6 +21,6 @@
   font-weight: 700;
   font-family: system-ui, sans-serif;
   text-align: center;
-  line-height: 34px;
   width: 34px;
+  height: 34px;
 }

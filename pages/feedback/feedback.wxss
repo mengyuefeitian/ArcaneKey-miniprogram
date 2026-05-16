@@ -7,7 +7,7 @@
 .section-label { font-size: 12px; color: rgba(238,238,245,0.45); display: block; margin-bottom: 8px; }
 .type-group { display: flex; gap: 8px; }
 .type-btn { flex: 1; padding: 10px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.08); background: transparent; color: rgba(238,238,245,0.5); font-size: 14px; font-weight: 600; text-align: center; }
-.content-input { width: 100%; min-height: 120px; background: #191920; border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; color: #eeeef5; font-size: 14px; padding: 12px; box-sizing: border-box; }
+.content-input { width: 100%; min-height: 120px; background: #191920; border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; color: #eeeef5; font-size: 14px; padding: 14px 12px; box-sizing: border-box; line-height: 1.6; }
 .char-count { font-size: 11px; color: rgba(238,238,245,0.25); display: block; text-align: right; margin-top: 4px; }
 .char-count.over-limit { color: #f87171; }
 .image-list { display: flex; gap: 8px; flex-wrap: wrap; }
@@ -15,6 +15,6 @@
 .image-thumb { width: 100%; height: 100%; border-radius: 8px; }
 .image-remove { position: absolute; top: -4px; right: -4px; width: 18px; height: 18px; border-radius: 9px; background: rgba(0,0,0,0.7); color: #fff; font-size: 10px; display: flex; align-items: center; justify-content: center; }
 .image-add { width: 72px; height: 72px; border-radius: 8px; border: 1px dashed rgba(255,255,255,0.15); display: flex; align-items: center; justify-content: center; font-size: 24px; color: rgba(238,238,245,0.3); }
-.contact-input { width: 100%; padding: 12px 14px; background: #191920; border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; color: #eeeef5; font-size: 14px; box-sizing: border-box; }
+.contact-input { width: 100%; padding: 12px 14px; background: #191920; border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; color: #eeeef5; font-size: 14px; box-sizing: border-box; height: 44px; line-height: 20px; }
 .submit-btn { width: 100%; height: 50px; border-radius: 15px; font-size: 15px; font-weight: 650; text-align: center; line-height: 50px; margin-top: 12px; }
 .submit-note { font-size: 11px; color: rgba(238,238,245,0.2); text-align: center; display: block; margin-top: 12px; }
