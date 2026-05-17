@@ -124,6 +124,13 @@ Page({
     if (this._autoSyncTimer) clearInterval(this._autoSyncTimer);
   },
 
+  onShareAppMessage() {
+    return {
+      title: '星枢令 - TOTP 身份验证器',
+      path: '/pages/index/index'
+    };
+  },
+
   _filterTokens() {
     const q = this.data.searchQ.toLowerCase();
     // 排除软删除的token
