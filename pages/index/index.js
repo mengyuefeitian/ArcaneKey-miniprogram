@@ -125,10 +125,11 @@ Page({
   },
 
   onShareAppMessage() {
+    console.log('分享函数执行了');
     return {
       title: '星枢令 - TOTP 身份验证器',
       path: '/pages/index/index',
-      imageUrl: '/images/logo-share.png'
+      imageUrl: '/images/logo-share.jpg'
     };
   },
 
