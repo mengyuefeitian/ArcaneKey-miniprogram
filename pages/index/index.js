@@ -77,7 +77,6 @@ Page({
   _autoSyncTimer: null,
 
   onLoad() {
-    console.log('[load] SHARE-DEBUG-v3 index.js loaded');
     const gd = app.globalData;
     // 过滤软删除的token用于显示
     const activeTokens = gd.tokens.filter(t => !t.is_deleted);
@@ -126,7 +125,6 @@ Page({
   },
 
   onShareAppMessage() {
-    console.log('[share] onShareAppMessage fired');
     return {
       title: '星枢令 - TOTP 身份验证器',
       path: '/pages/index/index',

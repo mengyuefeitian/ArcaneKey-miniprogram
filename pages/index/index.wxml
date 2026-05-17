@@ -35,8 +35,6 @@
             bind:copy="onCopyOtp"
           />
         </block>
-        <!-- DEBUG TEMP: open-type=share button to test onShareAppMessage — remove after verified -->
-        <button open-type="share" style="margin:16px;background:#4080D0;color:#fff;border-radius:8px;border:none;">调试：测试分享</button>
         <view style="height:120px"/>
       </scroll-view>
     </view>

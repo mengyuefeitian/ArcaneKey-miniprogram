@@ -28,8 +28,6 @@ App({
   },
 
   onLaunch() {
-    // DEBUG TEMP: enable vConsole on real device — remove before release
-    wx.setEnableDebug({ enableDebug: true });
     // 一次性迁移：过滤体验版遗留的测试账号（alice@ 账号），保留用户自己添加的真实数据
     if (!wx.getStorageSync('ak_release_v1')) {
       try {
