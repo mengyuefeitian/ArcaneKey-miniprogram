@@ -26,7 +26,6 @@ Page({
     searching: false,
     searchQ: '',
     filteredTokens: [],
-    shareImagePath: '',
     navVisible: true,
     homeLastScrollY: 0,
     profileLastScrollY: 0,
@@ -117,10 +116,6 @@ Page({
       this.setData({ timeLeft: tl });
       if (tl === 30) this._updateOtpMap();
     }, 1000);
-    wx.getImageInfo({
-      src: '/images/logo-share.png',
-      success: (res) => { this.setData({ shareImagePath: res.path }); }
-    });
   },
 
   onUnload() {
@@ -133,7 +128,7 @@ Page({
     return {
       title: '星枢令 - TOTP 身份验证器',
       path: '/pages/index/index',
-      imageUrl: this.data.shareImagePath || '/images/logo-share.png'
+      imageUrl: '/images/logo-share.png'
     };
   },
 
