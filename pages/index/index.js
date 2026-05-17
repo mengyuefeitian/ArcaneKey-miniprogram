@@ -124,7 +124,16 @@ Page({
     if (this._autoSyncTimer) clearInterval(this._autoSyncTimer);
   },
 
+  // DEBUG TEMP: fires when mini program returns to foreground (after share dialog closes)
+  onShow() {
+    if (wx.getStorageSync('_dbg_share_fired')) {
+      wx.removeStorageSync('_dbg_share_fired');
+      wx.showToast({ title: '✓ 分享函数已触发', icon: 'none', duration: 4000 });
+    }
+  },
+
   onShareAppMessage() {
+    wx.setStorageSync('_dbg_share_fired', true);
     console.log('[share] onShareAppMessage called');
     return {
       title: '星枢令 - TOTP 身份验证器',
