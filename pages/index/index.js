@@ -125,6 +125,7 @@ Page({
   },
 
   onShareAppMessage() {
+    console.log('[share] onShareAppMessage fired');
     return {
       title: '星枢令 - TOTP 身份验证器',
       path: '/pages/index/index',
