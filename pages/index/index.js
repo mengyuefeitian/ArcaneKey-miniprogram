@@ -127,7 +127,8 @@ Page({
   onShareAppMessage() {
     return {
       title: '星枢令 - TOTP 身份验证器',
-      path: '/pages/index/index'
+      path: '/pages/index/index',
+      imageUrl: '/images/logo.png'
     };
   },
 
