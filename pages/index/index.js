@@ -116,6 +116,8 @@ Page({
       this.setData({ timeLeft: tl });
       if (tl === 30) this._updateOtpMap();
     }, 1000);
+    // DEBUG TEMP: confirm new code is running on device — remove after share image verified
+    wx.showToast({ title: '[调试] 新版代码已加载', icon: 'none', duration: 3000 });
   },
 
   onUnload() {
