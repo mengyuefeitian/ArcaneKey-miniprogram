@@ -116,8 +116,18 @@ Page({
       this.setData({ timeLeft: tl });
       if (tl === 30) this._updateOtpMap();
     }, 1000);
-    // DEBUG TEMP: confirm new code is running on device — remove after share image verified
-    wx.showToast({ title: '[调试] 新版代码已加载', icon: 'none', duration: 3000 });
+    // DEBUG TEMP: pre-resolve share image path — remove after verified
+    wx.getImageInfo({
+      src: '/images/logo-share.jpg',
+      success: (res) => {
+        console.log('[share] image ok, path:', res.path);
+        this._shareImagePath = res.path;
+      },
+      fail: (err) => {
+        console.log('[share] image FAILED:', JSON.stringify(err));
+        this._shareImagePath = '';
+      }
+    });
   },
 
   onUnload() {
@@ -127,11 +137,12 @@ Page({
   },
 
   onShareAppMessage() {
-    console.log('分享函数执行了');
+    const imgPath = this._shareImagePath || '/images/logo-share.jpg';
+    console.log('[share] onShareAppMessage called, imageUrl:', imgPath);
     return {
       title: '星枢令 - TOTP 身份验证器',
       path: '/pages/index/index',
-      imageUrl: '/images/logo-share.jpg'
+      imageUrl: imgPath
     };
   },
 
