@@ -116,8 +116,6 @@ Page({
       this.setData({ timeLeft: tl });
       if (tl === 30) this._updateOtpMap();
     }, 1000);
-    // DEBUG TEMP: version beacon — remove after share verified
-    wx.showToast({ title: '[版本] SHARE-DEBUG-v2', icon: 'none', duration: 3000 });
   },
 
   onUnload() {
@@ -127,9 +125,6 @@ Page({
   },
 
   onShareAppMessage() {
-    // DEBUG TEMP: haptic pulse confirms this function fired on device, no DevTools needed
-    wx.vibrateShort({ type: 'heavy' });
-    console.log('[share] onShareAppMessage called');
     return {
       title: '星枢令 - TOTP 身份验证器',
       path: '/pages/index/index',
