@@ -652,6 +652,7 @@ Page({
   onDoImport() {
     const { importRaw, importPw, tokens } = this.data;
     if (!importRaw || !importPw) return;
+    this.showToast('解密中…');
     try {
       const data = decryptData(importRaw, importPw);
       if (!Array.isArray(data)) throw new Error('invalid');
