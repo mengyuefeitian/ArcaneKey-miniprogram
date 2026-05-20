@@ -279,7 +279,7 @@
           </text>
         </text>
         <view class="field-input readonly-field">
-          <text class="mono" style="line-height:44px;font-size:13px;color:{{editSecretVisible ? '#eeeef5' : 'rgba(238,238,245,0.4)'}};letter-spacing:1px">
+          <text class="mono" style="line-height:44px;font-size:13px;color:{{editSecretVisible ? '#eeeef5' : 'rgba(238,238,245,0.4)'}};letter-spacing:1px" bindtap="onCopySecret">
             {{editSecretVisible ? editToken.secret : editSecretMask}}
           </text>
         </view>

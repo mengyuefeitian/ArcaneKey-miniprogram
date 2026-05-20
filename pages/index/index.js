@@ -276,6 +276,15 @@ Page({
     this.setData({ editSecretVisible: !this.data.editSecretVisible });
   },
 
+  onCopySecret() {
+    const { editSecretVisible, isMember, editToken } = this.data;
+    if (!editSecretVisible || !isMember || !editToken.secret) return;
+    wx.setClipboardData({
+      data: editToken.secret,
+      success: () => { this.showToast('密钥已复制'); },
+    });
+  },
+
   onCloseEdit() { this.setData({ editToken: null }); },
 
   // ── Scan View ───────────────────────────────────────────────
