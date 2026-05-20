@@ -1,11 +1,16 @@
 {
-  "appid": "wxb3a1fe58a9ad9b87",
+  "appid": "wx5327dd9b28d32e7a",
   "compileType": "miniprogram",
   "cloudfunctionRoot": "cloudfunctions/",
   "libVersion": "3.15.2",
   "packOptions": {
     "ignore": [],
-    "include": []
+    "include": [
+      {
+        "value": "images",
+        "type": "folder"
+      }
+    ]
   },
   "setting": {
     "coverView": true,
