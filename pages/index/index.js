@@ -662,21 +662,24 @@ Page({
     const { importRaw, importPw, tokens } = this.data;
     if (!importRaw || !importPw) return;
     this.showToast('解密中…');
-    try {
-      const data = decryptData(importRaw, importPw);
-      if (!Array.isArray(data)) throw new Error('invalid');
-      const existingIds = new Set(tokens.map(t => t.id));
-      const imported = data.filter(t => !existingIds.has(t.id));
-      const merged = [...tokens, ...imported];
-      app.globalData.tokens = merged;
-      saveTokens(merged);
-      this.setData({ tokens: merged, showImportModal: false });
-      this._filterTokens();
-      this._updateOtpMap();
-      this.showToast(`成功导入 ${imported.length} 个账号`);
-    } catch (e) {
-      this.showToast('解密失败，请检查密码');
-    }
+    // Yield one frame so the toast paints before the synchronous PBKDF2 loop blocks the thread
+    setTimeout(() => {
+      try {
+        const data = decryptData(importRaw, importPw);
+        if (!Array.isArray(data)) throw new Error('invalid');
+        const existingIds = new Set(tokens.map(t => t.id));
+        const imported = data.filter(t => !existingIds.has(t.id));
+        const merged = [...tokens, ...imported];
+        app.globalData.tokens = merged;
+        saveTokens(merged);
+        this.setData({ tokens: merged, showImportModal: false });
+        this._filterTokens();
+        this._updateOtpMap();
+        this.showToast(`成功导入 ${imported.length} 个账号`);
+      } catch (e) {
+        this.showToast('解密失败，请检查密码');
+      }
+    }, 50);
   },
   onCloseImport() { this.setData({ showImportModal: false }); },
 
