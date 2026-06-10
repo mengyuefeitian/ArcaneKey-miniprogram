@@ -4,10 +4,15 @@ Page({
   data: {
     accentColor: '#4080D0', type: '需求', content: '', images: [],
     contact: '', sending: false, canSubmit: false,
+    statusBarHeight: 20,  // 状态栏高度，用于动态padding
   },
 
   onLoad() {
-    this.setData({ accentColor: app.globalData.theme.color });
+    const sysInfo = wx.getSystemInfoSync();
+    this.setData({
+      accentColor: app.globalData.theme.color,
+      statusBarHeight: sysInfo.statusBarHeight || 20,
+    });
   },
 
   onBack() { wx.navigateBack(); },

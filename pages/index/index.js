@@ -190,8 +190,14 @@ Page({
       searchQ: '',
     });
     if (screen === 'home') this._filterTokens();
-    // 进入扫码页面时直接调用摄像头扫码
+    // 进入扫码页面时重置状态并调用摄像头扫码
     if (screen === 'scan') {
+      this.setData({
+        scanForm: { brand: '', account: '', secret: '' },
+        scanErrors: {},
+        scanScanned: false,
+        scanTab: 'camera',
+      });
       setTimeout(() => this.onScanCamera(), 100);
     }
   },

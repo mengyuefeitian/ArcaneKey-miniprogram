@@ -1,5 +1,5 @@
 <view class="page" style="--accent:{{accentColor}}">
-  <view class="header">
+  <view class="header" style="padding-top: {{statusBarHeight}}px;">
     <view class="back-btn" bindtap="onBack">×</view>
     <text class="title">意见与建议</text>
   </view>

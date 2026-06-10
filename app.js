@@ -65,10 +65,19 @@ App({
           // 生产环境需要调用云函数获取真实 openid
           this.globalData.openid = 'wx_' + Date.now();
           // 检查是否有已存储的用户信息
-          const savedUserInfo = wx.getStorageSync('ak_user_info');
-          if (savedUserInfo) {
-            this.globalData.userInfo = savedUserInfo;
-            this.globalData.loggedIn = true;
+          try {
+            const savedUserInfo = wx.getStorageSync('ak_user_info');
+            // 验证保存的用户信息是否有效
+            if (savedUserInfo && savedUserInfo.name) {
+              this.globalData.userInfo = savedUserInfo;
+              this.globalData.loggedIn = true;
+            }
+          } catch (e) {
+            console.error('Failed to load userInfo from storage:', e);
+            // storage读取失败，清除无效数据
+            try {
+              wx.removeStorageSync('ak_user_info');
+            } catch (_) {}
           }
         }
       },
@@ -80,8 +89,21 @@ App({
   },
 
   saveUserInfo(info) {
+    // 验证用户信息有效性
+    if (!info || !info.name) {
+      console.error('Invalid userInfo:', info);
+      return false;
+    }
+    
     this.globalData.userInfo = info;
     this.globalData.loggedIn = true;
-    wx.setStorageSync('ak_user_info', info);
+    
+    try {
+      wx.setStorageSync('ak_user_info', info);
+      return true;
+    } catch (e) {
+      console.error('Failed to save userInfo to storage:', e);
+      return false;
+    }
   },
 });
