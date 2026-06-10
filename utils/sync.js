@@ -96,12 +96,23 @@ class PendingSyncQueue {
   hasPending() { return this.tasks.length > 0; }
   getPendingCount() { return this.tasks.length; }
   clear() { this.tasks = []; this._save(); }
+
+  // 清除某个 token 的所有任务（用于仅本地删除）
+  clearTokenTasks(tokenId) {
+    this.tasks = this.tasks.filter(t => t.tokenId !== tokenId);
+    this._save();
+  }
 }
 
 let _queue = null;
 function getQueue() {
   if (!_queue) _queue = new PendingSyncQueue();
   return _queue;
+}
+
+// 清除某个 token 的队列任务
+function clearTokenTasks(tokenId) {
+  getQueue().clearTokenTasks(tokenId);
 }
 
 // ── Network State ──────────────────────────────────────────────
@@ -428,6 +439,7 @@ module.exports = {
   queueUpdate,
   queueDelete,
   queueRestore,
+  clearTokenTasks,
   processQueue,
   pullFromCloud,
   sync,
