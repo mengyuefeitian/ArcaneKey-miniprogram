@@ -430,6 +430,29 @@ function restoreToken(tokenId) {
   return updated;
 }
 
+// ── Cloud Data Consolidation ─────────────────────────────────────
+
+// 合并云端分散的数据记录（执行一次迁移）
+async function consolidateCloudData() {
+  try {
+    console.log('[SYNC] Starting cloud data consolidation...');
+    const result = await wx.cloud.callFunction({ name: 'consolidateData' });
+
+    if (result.result && result.result.success) {
+      console.log('[SYNC] Consolidation result:', result.result);
+      // 合并成功后，重新拉取数据
+      const pullResult = await pullFromCloud();
+      return { success: true, consolidation: result.result, pull: pullResult };
+    } else {
+      console.error('[SYNC] Consolidation failed:', result.result);
+      return { success: false, error: result.result?.error || 'Unknown error' };
+    }
+  } catch (err) {
+    console.error('[SYNC] Consolidation error:', err);
+    return { success: false, error: err.message };
+  }
+}
+
 // ── Auto Sync ──────────────────────────────────────────────────
 
 function startAutoSync(onResult) {
@@ -479,6 +502,7 @@ module.exports = {
   sync,
   softDeleteToken,
   restoreToken,
+  consolidateCloudData,
   startAutoSync,
   saveTokensLocal,
   debugCloudData,

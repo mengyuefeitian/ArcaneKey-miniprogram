@@ -16,6 +16,7 @@ const {
   saveTokensLocal,
   debugCloudData,
   clearTokenTasks,
+  consolidateCloudData,
 } = require('../../utils/sync');
 
 Page({
@@ -1062,6 +1063,41 @@ Page({
       console.error('Upload to cloud failed:', err);
       this.setData({ syncStatus: 'idle' });
       this.showToast('上传失败', 'error');
+    }
+  },
+
+  async onConsolidateCloud() {
+    if (!this.data.loggedIn) {
+      this.showToast('请先登录', 'error');
+      return;
+    }
+
+    this.setData({ syncStatus: 'syncing' });
+    this.showToast('正在合并云端数据...');
+
+    try {
+      const result = await consolidateCloudData();
+      this.setData({ syncStatus: 'idle' });
+
+      if (result.success) {
+        const consolidated = result.consolidation;
+        this.showToast(`合并成功！删除 ${consolidated.deleted} 条重复记录，保留 ${consolidated.active} 条有效数据`);
+        // 更新本地数据
+        if (result.pull && result.pull.merged) {
+          this.setData({
+            tokens: result.pull.merged,
+            filteredTokens: result.pull.merged.filter(t => !t.is_deleted),
+          });
+          this._filterTokens();
+          this._updateOtpMap();
+        }
+      } else {
+        this.showToast('合并失败：' + (result.error || '未知错误'), 'error');
+      }
+    } catch (err) {
+      console.error('Consolidate cloud failed:', err);
+      this.setData({ syncStatus: 'idle' });
+      this.showToast('合并失败', 'error');
     }
   },
 
