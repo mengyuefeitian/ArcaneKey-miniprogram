@@ -56,32 +56,35 @@ App({
     this._silentLogin();
   },
 
-  // 静默登录：获取 openid，用户可正常使用本地功能
-  _silentLogin() {
-    wx.login({
-      success: (res) => {
-        if (res.code) {
-          // 将 code 发送到云端换取 openid（这里暂时用本地模拟）
-          // 生产环境需要调用云函数获取真实 openid
-          this.globalData.openid = 'wx_' + Date.now();
-          // 检查是否有已存储的用户信息
-          const savedUserInfo = wx.getStorageSync('ak_user_info');
-          if (savedUserInfo) {
-            this.globalData.userInfo = savedUserInfo;
-            this.globalData.loggedIn = true;
-          }
+  // 静默登录：获取真实 openid，用户可正常使用本地功能
+  async _silentLogin() {
+    try {
+      // 调用云函数获取真实 openid
+      const result = await wx.cloud.callFunction({ name: 'login' });
+      if (result.result && result.result.success && result.result.openid) {
+        this.globalData.openid = result.result.openid;
+        console.log('[APP] 获取真实 openid 成功:', result.result.openid);
+
+        // 检查是否有已存储的用户信息
+        const savedUserInfo = wx.getStorageSync('ak_user_info');
+        if (savedUserInfo && savedUserInfo.name) {
+          this.globalData.userInfo = savedUserInfo;
+          this.globalData.loggedIn = true;
         }
-      },
-      fail: () => {
-        // 静默登录失败不影响本地功能使用
-        console.log('静默登录失败，本地功能可正常使用');
+      } else {
+        console.log('[APP] 云函数返回异常，openid 获取失败');
       }
-    });
+    } catch (err) {
+      console.error('[APP] 静默登录失败:', err);
+      // 静默登录失败不影响本地功能使用
+    }
   },
 
   saveUserInfo(info) {
-    this.globalData.userInfo = info;
+    // 确保 userInfo 包含 openid，用于云同步
+    const fullInfo = { ...info, openid: this.globalData.openid };
+    this.globalData.userInfo = fullInfo;
     this.globalData.loggedIn = true;
-    wx.setStorageSync('ak_user_info', info);
+    wx.setStorageSync('ak_user_info', fullInfo);
   },
 });

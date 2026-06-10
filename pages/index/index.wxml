@@ -18,7 +18,7 @@
       </view>
 
       <!-- Token list -->
-      <scroll-view class="token-list" style="padding-top:{{searching ? 0 : '8px'}}" scroll-y bindscroll="onHomeScroll" enhanced="{{true}}" show-scrollbar="{{false}}" scroll-top="{{scrollTop}}">
+      <scroll-view class="token-list" style="padding-top:{{searching ? 0 : '8px'}}" scroll-y bindscroll="onHomeScroll" enhanced="{{true}}" show-scrollbar="{{false}}" scroll-top="{{scrollTop}}" enable-flex="{{true}}">
         <block wx:if="{{filteredTokens.length === 0}}">
           <view class="empty-state">
             <text class="empty-icon">🔍</text>
@@ -240,7 +240,7 @@
     </view>
     <view style="padding:0 20px;flex:1;overflow-y:auto">
       <view style="display:flex;justify-content:center;padding:20px 0 8px">
-        <logo brand="{{editForm.brand || editToken.brand}}" size="{{64}}"/>
+        <logo brand="{{editForm.brand || editToken.brand || ''}}" size="{{64}}"/>
       </view>
       <view class="field-wrap">
         <text class="field-label">品牌名称</text>
