@@ -96,12 +96,23 @@ class PendingSyncQueue {
   hasPending() { return this.tasks.length > 0; }
   getPendingCount() { return this.tasks.length; }
   clear() { this.tasks = []; this._save(); }
+
+  // 清除某个 token 的所有任务（用于仅本地删除）
+  clearTokenTasks(tokenId) {
+    this.tasks = this.tasks.filter(t => t.tokenId !== tokenId);
+    this._save();
+  }
 }
 
 let _queue = null;
 function getQueue() {
   if (!_queue) _queue = new PendingSyncQueue();
   return _queue;
+}
+
+// 清除某个 token 的队列任务
+function clearTokenTasks(tokenId) {
+  getQueue().clearTokenTasks(tokenId);
 }
 
 // ── Network State ──────────────────────────────────────────────
@@ -173,8 +184,63 @@ function getOpenid() {
 }
 
 async function getCloudDoc(db, openid) {
-  const res = await db.collection('user_backups').where({ openid }).get();
-  return res.data.length > 0 ? res.data[0] : null;
+  // 使用 _openid 查询（微信云开发自动添加的真实用户标识）
+  // 注意：可能返回多条记录（之前用假 openid 创建的）
+  const res = await db.collection('user_backups').where({ _openid: openid }).get();
+
+  if (res.data.length === 0) return null;
+
+  // 合并所有记录的 tokens，按时间戳取最新版本
+  // 同一个 token id 在不同记录中可能有不同状态，取最新时间戳的那条
+  const allDocs = res.data.sort((a, b) =>
+    new Date(b.timestamp || 0).getTime() - new Date(a.timestamp || 0).getTime()
+  );
+
+  const tokenMap = new Map();
+  for (const doc of allDocs) {
+    for (const token of (doc.tokens || [])) {
+      const existing = tokenMap.get(token.id);
+      if (!existing) {
+        tokenMap.set(token.id, token);
+      } else {
+        // 已存在：取最新时间戳的版本（deleted_at 用于判断删除时间）
+        const existingTime = existing.deleted_at || existing.synced_at || existing.created_at || '';
+        const tokenTime = token.deleted_at || token.synced_at || token.created_at || '';
+        if (tokenTime > existingTime) {
+          tokenMap.set(token.id, token);
+        }
+      }
+    }
+  }
+
+  // 返回合并后的数据结构
+  const mergedTokens = Array.from(tokenMap.values());
+  const activeTokens = mergedTokens.filter(t => !t.is_deleted);
+  return {
+    _id: allDocs[0]._id,
+    tokens: mergedTokens,
+    active_tokens: activeTokens,
+    timestamp: allDocs[0].timestamp,
+  };
+}
+
+// 诊断函数：查询云端所有数据
+async function debugCloudData() {
+  try {
+    const db = wx.cloud.database();
+    const openid = getOpenid();
+
+    // 查询当前 openid 的数据（使用 _openid）
+    const myData = await getCloudDoc(db, openid);
+
+    // 查询所有数据（用于检查是否有遗漏）
+    const allData = await db.collection('user_backups').limit(20).get();
+
+    return { myData, allData: allData.data };
+  } catch (err) {
+    console.error('[DEBUG] 查询失败:', err);
+    return null;
+  }
 }
 
 async function saveCloudDoc(db, doc, openid, tokens) {
@@ -291,9 +357,13 @@ async function pullFromCloud() {
 
 // Merge cloud tokens into local state.
 // Rule 4: local soft-delete is FINAL — cloud cannot restore it.
-// Rule (conflict): local always wins when both have the token.
+// Exception: 如果云端有 recovered_at 标记（一次性修复），允许覆盖本地删除状态
+// Rule (conflict): local always wins when both have the token (except recovery case).
 function mergeCloudToLocal(local, cloud) {
   const localMap = new Map(local.map(t => [t.id, t]));
+
+  // Bug fix timestamp: tokens deleted before this are eligible for recovery
+  const BUG_FIX_TIME = '2026-06-10T21:38:26+08:00';
 
   for (const ct of cloud) {
     const lt = localMap.get(ct.id);
@@ -303,10 +373,25 @@ function mergeCloudToLocal(local, cloud) {
         localMap.set(ct.id, ct);
       }
     } else if (lt.is_deleted) {
-      // Rule 4: local soft-delete is final. Cloud cannot restore it.
-      // Keep local deleted state as-is.
+      // Rule 4: local soft-delete is final, BUT...
+      // Exception: 云端有 recovered_at 标记 → 允许恢复
+      if (ct.recovered_at) {
+        // 云端已恢复，用云端状态覆盖本地
+        localMap.set(ct.id, ct);
+      } else if (lt.deleted_at && new Date(lt.deleted_at) < new Date(BUG_FIX_TIME)) {
+        // 本地删除时间早于 bug fix → 也允许恢复（兼容本地误删除场景）
+        if (!ct.is_deleted) {
+          localMap.set(ct.id, ct);
+        }
+      }
+      // 否则：保持本地删除状态（Rule 4 生效）
+    } else if (ct.is_deleted) {
+      // Cloud deleted, local active → local wins (Rule 1 conflict)
+      // Keep local active state
+    } else {
+      // Both active → local wins (Rule 1 conflict)
+      // Keep local version (has latest local edits)
     }
-    // else: both exist and local is active → local wins (Rule 1 conflict)
   }
 
   return Array.from(localMap.values());
@@ -358,6 +443,29 @@ function restoreToken(tokenId) {
   return updated;
 }
 
+// ── Cloud Data Consolidation ─────────────────────────────────────
+
+// 合并云端分散的数据记录（执行一次迁移）
+async function consolidateCloudData() {
+  try {
+    console.log('[SYNC] Starting cloud data consolidation...');
+    const result = await wx.cloud.callFunction({ name: 'consolidateData' });
+
+    if (result.result && result.result.success) {
+      console.log('[SYNC] Consolidation result:', result.result);
+      // 合并成功后，重新拉取数据
+      const pullResult = await pullFromCloud();
+      return { success: true, consolidation: result.result, pull: pullResult };
+    } else {
+      console.error('[SYNC] Consolidation failed:', result.result);
+      return { success: false, error: result.result?.error || 'Unknown error' };
+    }
+  } catch (err) {
+    console.error('[SYNC] Consolidation error:', err);
+    return { success: false, error: err.message };
+  }
+}
+
 // ── Auto Sync ──────────────────────────────────────────────────
 
 function startAutoSync(onResult) {
@@ -393,6 +501,29 @@ function startAutoSync(onResult) {
   return timer;
 }
 
+// ── One-Time Fix ──────────────────────────────────────────────────
+
+// 一次性修复：恢复误删数据 + 清理重复记录
+async function oneTimeFixData() {
+  try {
+    console.log('[SYNC] Starting one-time fix...');
+    const result = await wx.cloud.callFunction({ name: 'oneTimeFix' });
+
+    if (result.result && result.result.success) {
+      console.log('[SYNC] One-time fix result:', result.result);
+      // 修复成功后，重新拉取数据
+      const pullResult = await pullFromCloud();
+      return { success: true, fix: result.result, pull: pullResult };
+    } else {
+      console.error('[SYNC] One-time fix failed:', result.result);
+      return { success: false, error: result.result?.error || 'Unknown error' };
+    }
+  } catch (err) {
+    console.error('[SYNC] One-time fix error:', err);
+    return { success: false, error: err.message };
+  }
+}
+
 module.exports = {
   SYNC_INTERVAL,
   SyncTaskType,
@@ -401,11 +532,15 @@ module.exports = {
   queueUpdate,
   queueDelete,
   queueRestore,
+  clearTokenTasks,
   processQueue,
   pullFromCloud,
   sync,
   softDeleteToken,
   restoreToken,
+  consolidateCloudData,
+  oneTimeFixData,
   startAutoSync,
   saveTokensLocal,
+  debugCloudData,
 };

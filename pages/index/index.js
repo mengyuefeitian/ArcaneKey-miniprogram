@@ -14,6 +14,10 @@ const {
   queueUpdate,
   getQueue,
   saveTokensLocal,
+  debugCloudData,
+  clearTokenTasks,
+  consolidateCloudData,
+  oneTimeFixData,
 } = require('../../utils/sync');
 
 Page({
@@ -111,6 +115,8 @@ Page({
     if (gd.loggedIn) {
       this._cloudRestore().then(() => this._startAutoSync());
     }
+    // 诊断：打印云端数据状态
+    debugCloudData();
     this._totpTimer = setInterval(() => {
       const tl = timeLeft();
       this.setData({ timeLeft: tl });
@@ -327,10 +333,31 @@ Page({
     if (this.data.loggedIn) processQueue();
   },
 
-  executeDelete()      { this._doSoftDelete('已删除'); },
+  // 未登录时删除：物理删除，不入队（等同于仅本地删除）
+  executeDelete() {
+    const { deleteTarget, tokens } = this.data;
+    if (!deleteTarget) return;
+
+    const updated = tokens.filter(t => t.id !== deleteTarget.id);
+    app.globalData.tokens = updated;
+    saveTokensLocal(updated);
+
+    // 清除队列中该 token 的所有任务
+    clearTokenTasks(deleteTarget.id);
+
+    this.setData({
+      tokens: updated,
+      filteredTokens: updated.filter(t => !t.is_deleted),
+      editToken: null, deleteTarget: null, showDeleteModal: false,
+    });
+    this._filterTokens();
+    this._updateOtpMap();
+    this.showToast('已删除');
+  },
+
   executeDeleteCloud() { this._doSoftDelete('已删除(本地+云端)'); },
 
-  // 仅本地删除：物理删除，不入队（云端保留）
+  // 仅本地删除：物理删除，清除队列任务（云端保留）
   executeDeleteLocal() {
     const { deleteTarget, tokens } = this.data;
     if (!deleteTarget) return;
@@ -338,6 +365,9 @@ Page({
     const updated = tokens.filter(t => t.id !== deleteTarget.id);
     app.globalData.tokens = updated;
     saveTokensLocal(updated);
+
+    // 清除队列中该 token 的所有任务，避免误同步
+    clearTokenTasks(deleteTarget.id);
 
     this.setData({
       tokens: updated,
@@ -380,8 +410,6 @@ Page({
     const accountEncoded = encodeURIComponent(token.account);
     const secret = token.secret;
     const otpauthUrl = `otpauth://totp/${issuerEncoded}:${accountEncoded}?secret=${secret}&issuer=${issuerEncoded}&algorithm=SHA1&digits=6&period=30`;
-    console.log('[QR-GEN] otpauth URL:', otpauthUrl);
-    console.log('[QR-GEN] URL length:', otpauthUrl.length, 'bytes');
     this.setData({ showQRCodeModal: true, qrCodeUrl: otpauthUrl });
     // 绘制QR码
     setTimeout(() => this._drawQRCode(otpauthUrl), 100);
@@ -415,9 +443,7 @@ Page({
         ctx.scale(dpr, dpr);
         try {
           const qrData = createQRCode(url, 'M');
-          console.log('[QR-DRAW] version:', qrData.version, 'moduleCount:', qrData.moduleCount, 'canvasSize:', canvasWidth, 'moduleSize:', Math.floor(canvasWidth / qrData.moduleCount), 'px');
           drawQRCode(ctx, qrData, canvasWidth);
-          console.log('[QR-DRAW] draw complete');
         } catch (e) {
           ctx.fillStyle = '#ffffff';
           ctx.fillRect(0, 0, canvasWidth, canvasHeight);
@@ -444,12 +470,10 @@ Page({
     wx.scanCode({
       onlyFromCamera: true,
       success: (res) => {
-        console.log('[SCAN] camera result:', res.result);
         this._parseScanResult(res.result);
         this.setData({ scanScanning: false });
       },
       fail: (err) => {
-        console.log('[SCAN] camera fail:', JSON.stringify(err));
         this.setData({ scanScanning: false });
         this.showToast('扫码取消');
       },
@@ -460,18 +484,15 @@ Page({
     wx.scanCode({
       onlyFromCamera: false,
       success: (r) => {
-        console.log('[SCAN] album result:', r.result);
         this._parseScanResult(r.result);
       },
       fail: (err) => {
-        console.log('[SCAN] album fail:', JSON.stringify(err));
         this.showToast('未识别到二维码');
       },
     });
   },
 
   _parseScanResult(result) {
-    console.log('[PARSE] raw result:', result);
     try {
       if (!result || result.indexOf('otpauth://totp/') !== 0) throw new Error('not otpauth: got "' + String(result).substring(0, 80) + '"');
       const after = result.substring('otpauth://totp/'.length);
@@ -494,7 +515,6 @@ Page({
       const brand = params.issuer || (decoded.includes(':') ? decoded.split(':')[0] : decoded);
 
       const secret = (params.secret || '').trim().toUpperCase();
-      console.log('[PARSE] brand:', brand, 'account:', account, 'secret:', secret ? secret.substring(0, 4) + '***' : '(empty)', 'params:', JSON.stringify(params));
       if (!secret) { this.showToast('二维码中未找到密钥'); return; }
 
       // 去重检查：检查secret是否已存在
@@ -1061,6 +1081,78 @@ Page({
       console.error('Upload to cloud failed:', err);
       this.setData({ syncStatus: 'idle' });
       this.showToast('上传失败', 'error');
+    }
+  },
+
+  async onConsolidateCloud() {
+    if (!this.data.loggedIn) {
+      this.showToast('请先登录', 'error');
+      return;
+    }
+
+    this.setData({ syncStatus: 'syncing' });
+    this.showToast('正在合并云端数据...');
+
+    try {
+      const result = await consolidateCloudData();
+      this.setData({ syncStatus: 'idle' });
+
+      if (result.success) {
+        const consolidated = result.consolidation;
+        this.showToast(`合并成功！删除 ${consolidated.deleted} 条重复记录，保留 ${consolidated.active} 条有效数据`);
+        // 更新本地数据
+        if (result.pull && result.pull.merged) {
+          this.setData({
+            tokens: result.pull.merged,
+            filteredTokens: result.pull.merged.filter(t => !t.is_deleted),
+          });
+          this._filterTokens();
+          this._updateOtpMap();
+        }
+      } else {
+        this.showToast('合并失败：' + (result.error || '未知错误'), 'error');
+      }
+    } catch (err) {
+      console.error('Consolidate cloud failed:', err);
+      this.setData({ syncStatus: 'idle' });
+      this.showToast('合并失败', 'error');
+    }
+  },
+
+  // 一次性修复：恢复误删数据 + 清理重复记录
+  // 调用方式：在开发者工具控制台输入 getCurrentPages()[0].onOneTimeFix()
+  async onOneTimeFix() {
+    if (!this.data.loggedIn) {
+      this.showToast('请先登录', 'error');
+      return;
+    }
+
+    this.setData({ syncStatus: 'syncing' });
+    this.showToast('正在执行一次性修复...');
+
+    try {
+      const result = await oneTimeFixData();
+      this.setData({ syncStatus: 'idle' });
+
+      if (result.success) {
+        const fix = result.fix;
+        this.showToast(`修复成功！恢复 ${fix.recovered} 条误删数据，清理 ${fix.deduplicated} 条重复记录`);
+        // 更新本地数据
+        if (result.pull && result.pull.merged) {
+          this.setData({
+            tokens: result.pull.merged,
+            filteredTokens: result.pull.merged.filter(t => !t.is_deleted),
+          });
+          this._filterTokens();
+          this._updateOtpMap();
+        }
+      } else {
+        this.showToast('修复失败：' + (result.error || '未知错误'), 'error');
+      }
+    } catch (err) {
+      console.error('One-time fix failed:', err);
+      this.setData({ syncStatus: 'idle' });
+      this.showToast('修复失败', 'error');
     }
   },
 

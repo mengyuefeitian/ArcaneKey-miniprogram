@@ -452,6 +452,19 @@
       <!-- Sync Info -->
       <view class="info-banner">ℹ️ 自动同步以云端数据为准。本地新增数据会优先上传到云端，上传成功后才会从云端同步到本地。</view>
 
+      <!-- Consolidate Cloud Data -->
+      <view class="sync-config-card" style="border-color:rgba(255,255,255,0.08)">
+        <view style="flex:1">
+          <text style="font-size:14px;color:#eeeef5;font-weight:500">合并云端数据</text>
+          <text style="display:block;font-size:12px;color:rgba(238,238,245,0.35);margin-top:2px">
+            清理重复数据，合并分散记录
+          </text>
+        </view>
+        <view class="sync-btn" style="background:{{accentColor}};color:#fff" bindtap="onConsolidateCloud">
+          合并
+        </view>
+      </view>
+
       <!-- Upload Pending -->
       <view wx:if="{{pendingUploadCount > 0}}" class="sync-config-card" style="border-color:#f59e0b30">
         <view style="flex:1">
