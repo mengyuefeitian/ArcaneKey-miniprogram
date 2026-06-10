@@ -173,7 +173,9 @@ function getOpenid() {
 }
 
 async function getCloudDoc(db, openid) {
-  const res = await db.collection('user_backups').where({ openid }).get();
+  // 使用 _openid 查询（微信云开发自动添加的真实用户标识）
+  // 而不是 openid（应用代码设置的，之前是假的）
+  const res = await db.collection('user_backups').where({ _openid: openid }).get();
   return res.data.length > 0 ? res.data[0] : null;
 }
 
@@ -184,7 +186,7 @@ async function debugCloudData() {
     const openid = getOpenid();
     console.log('[DEBUG] 当前 openid:', openid);
 
-    // 查询当前 openid 的数据
+    // 查询当前 openid 的数据（使用 _openid）
     const myData = await getCloudDoc(db, openid);
     console.log('[DEBUG] 当前用户云端数据:', myData);
 
@@ -192,7 +194,7 @@ async function debugCloudData() {
     const allData = await db.collection('user_backups').limit(20).get();
     console.log('[DEBUG] 云端所有记录:', allData.data.length, '条');
     allData.data.forEach((doc, i) => {
-      console.log(`[DEBUG] 记录${i}: openid=${doc.openid?.substring(0,10)}..., tokens=${doc.tokens?.length || 0}`);
+      console.log(`[DEBUG] 记录${i}: openid=${doc.openid?.substring(0,10)}..., _openid=${doc._openid?.substring(0,10)}..., tokens=${doc.tokens?.length || 0}, active=${doc.active_tokens?.length || 0}`);
     });
 
     return { myData, allData: allData.data };
