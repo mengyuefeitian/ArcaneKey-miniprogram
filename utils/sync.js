@@ -229,18 +229,12 @@ async function debugCloudData() {
   try {
     const db = wx.cloud.database();
     const openid = getOpenid();
-    console.log('[DEBUG] 当前 openid:', openid);
 
     // 查询当前 openid 的数据（使用 _openid）
     const myData = await getCloudDoc(db, openid);
-    console.log('[DEBUG] 当前用户云端数据:', myData);
 
     // 查询所有数据（用于检查是否有遗漏）
     const allData = await db.collection('user_backups').limit(20).get();
-    console.log('[DEBUG] 云端所有记录:', allData.data.length, '条');
-    allData.data.forEach((doc, i) => {
-      console.log(`[DEBUG] 记录${i}: openid=${doc.openid?.substring(0,10)}..., _openid=${doc._openid?.substring(0,10)}..., tokens=${doc.tokens?.length || 0}, active=${doc.active_tokens?.length || 0}`);
-    });
 
     return { myData, allData: allData.data };
   } catch (err) {
@@ -363,9 +357,13 @@ async function pullFromCloud() {
 
 // Merge cloud tokens into local state.
 // Rule 4: local soft-delete is FINAL — cloud cannot restore it.
-// Rule (conflict): local always wins when both have the token.
+// Exception: 如果云端有 recovered_at 标记（一次性修复），允许覆盖本地删除状态
+// Rule (conflict): local always wins when both have the token (except recovery case).
 function mergeCloudToLocal(local, cloud) {
   const localMap = new Map(local.map(t => [t.id, t]));
+
+  // Bug fix timestamp: tokens deleted before this are eligible for recovery
+  const BUG_FIX_TIME = '2026-06-10T21:38:26+08:00';
 
   for (const ct of cloud) {
     const lt = localMap.get(ct.id);
@@ -375,10 +373,25 @@ function mergeCloudToLocal(local, cloud) {
         localMap.set(ct.id, ct);
       }
     } else if (lt.is_deleted) {
-      // Rule 4: local soft-delete is final. Cloud cannot restore it.
-      // Keep local deleted state as-is.
+      // Rule 4: local soft-delete is final, BUT...
+      // Exception: 云端有 recovered_at 标记 → 允许恢复
+      if (ct.recovered_at) {
+        // 云端已恢复，用云端状态覆盖本地
+        localMap.set(ct.id, ct);
+      } else if (lt.deleted_at && new Date(lt.deleted_at) < new Date(BUG_FIX_TIME)) {
+        // 本地删除时间早于 bug fix → 也允许恢复（兼容本地误删除场景）
+        if (!ct.is_deleted) {
+          localMap.set(ct.id, ct);
+        }
+      }
+      // 否则：保持本地删除状态（Rule 4 生效）
+    } else if (ct.is_deleted) {
+      // Cloud deleted, local active → local wins (Rule 1 conflict)
+      // Keep local active state
+    } else {
+      // Both active → local wins (Rule 1 conflict)
+      // Keep local version (has latest local edits)
     }
-    // else: both exist and local is active → local wins (Rule 1 conflict)
   }
 
   return Array.from(localMap.values());
@@ -488,6 +501,29 @@ function startAutoSync(onResult) {
   return timer;
 }
 
+// ── One-Time Fix ──────────────────────────────────────────────────
+
+// 一次性修复：恢复误删数据 + 清理重复记录
+async function oneTimeFixData() {
+  try {
+    console.log('[SYNC] Starting one-time fix...');
+    const result = await wx.cloud.callFunction({ name: 'oneTimeFix' });
+
+    if (result.result && result.result.success) {
+      console.log('[SYNC] One-time fix result:', result.result);
+      // 修复成功后，重新拉取数据
+      const pullResult = await pullFromCloud();
+      return { success: true, fix: result.result, pull: pullResult };
+    } else {
+      console.error('[SYNC] One-time fix failed:', result.result);
+      return { success: false, error: result.result?.error || 'Unknown error' };
+    }
+  } catch (err) {
+    console.error('[SYNC] One-time fix error:', err);
+    return { success: false, error: err.message };
+  }
+}
+
 module.exports = {
   SYNC_INTERVAL,
   SyncTaskType,
@@ -503,6 +539,7 @@ module.exports = {
   softDeleteToken,
   restoreToken,
   consolidateCloudData,
+  oneTimeFixData,
   startAutoSync,
   saveTokensLocal,
   debugCloudData,

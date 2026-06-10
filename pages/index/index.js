@@ -17,6 +17,7 @@ const {
   debugCloudData,
   clearTokenTasks,
   consolidateCloudData,
+  oneTimeFixData,
 } = require('../../utils/sync');
 
 Page({
@@ -403,8 +404,6 @@ Page({
     const accountEncoded = encodeURIComponent(token.account);
     const secret = token.secret;
     const otpauthUrl = `otpauth://totp/${issuerEncoded}:${accountEncoded}?secret=${secret}&issuer=${issuerEncoded}&algorithm=SHA1&digits=6&period=30`;
-    console.log('[QR-GEN] otpauth URL:', otpauthUrl);
-    console.log('[QR-GEN] URL length:', otpauthUrl.length, 'bytes');
     this.setData({ showQRCodeModal: true, qrCodeUrl: otpauthUrl });
     // 绘制QR码
     setTimeout(() => this._drawQRCode(otpauthUrl), 100);
@@ -438,9 +437,7 @@ Page({
         ctx.scale(dpr, dpr);
         try {
           const qrData = createQRCode(url, 'M');
-          console.log('[QR-DRAW] version:', qrData.version, 'moduleCount:', qrData.moduleCount, 'canvasSize:', canvasWidth, 'moduleSize:', Math.floor(canvasWidth / qrData.moduleCount), 'px');
           drawQRCode(ctx, qrData, canvasWidth);
-          console.log('[QR-DRAW] draw complete');
         } catch (e) {
           ctx.fillStyle = '#ffffff';
           ctx.fillRect(0, 0, canvasWidth, canvasHeight);
@@ -467,12 +464,10 @@ Page({
     wx.scanCode({
       onlyFromCamera: true,
       success: (res) => {
-        console.log('[SCAN] camera result:', res.result);
         this._parseScanResult(res.result);
         this.setData({ scanScanning: false });
       },
       fail: (err) => {
-        console.log('[SCAN] camera fail:', JSON.stringify(err));
         this.setData({ scanScanning: false });
         this.showToast('扫码取消');
       },
@@ -483,18 +478,15 @@ Page({
     wx.scanCode({
       onlyFromCamera: false,
       success: (r) => {
-        console.log('[SCAN] album result:', r.result);
         this._parseScanResult(r.result);
       },
       fail: (err) => {
-        console.log('[SCAN] album fail:', JSON.stringify(err));
         this.showToast('未识别到二维码');
       },
     });
   },
 
   _parseScanResult(result) {
-    console.log('[PARSE] raw result:', result);
     try {
       if (!result || result.indexOf('otpauth://totp/') !== 0) throw new Error('not otpauth: got "' + String(result).substring(0, 80) + '"');
       const after = result.substring('otpauth://totp/'.length);
@@ -517,7 +509,6 @@ Page({
       const brand = params.issuer || (decoded.includes(':') ? decoded.split(':')[0] : decoded);
 
       const secret = (params.secret || '').trim().toUpperCase();
-      console.log('[PARSE] brand:', brand, 'account:', account, 'secret:', secret ? secret.substring(0, 4) + '***' : '(empty)', 'params:', JSON.stringify(params));
       if (!secret) { this.showToast('二维码中未找到密钥'); return; }
 
       // 去重检查：检查secret是否已存在
@@ -1119,6 +1110,43 @@ Page({
       console.error('Consolidate cloud failed:', err);
       this.setData({ syncStatus: 'idle' });
       this.showToast('合并失败', 'error');
+    }
+  },
+
+  // 一次性修复：恢复误删数据 + 清理重复记录
+  // 调用方式：在开发者工具控制台输入 getCurrentPages()[0].onOneTimeFix()
+  async onOneTimeFix() {
+    if (!this.data.loggedIn) {
+      this.showToast('请先登录', 'error');
+      return;
+    }
+
+    this.setData({ syncStatus: 'syncing' });
+    this.showToast('正在执行一次性修复...');
+
+    try {
+      const result = await oneTimeFixData();
+      this.setData({ syncStatus: 'idle' });
+
+      if (result.success) {
+        const fix = result.fix;
+        this.showToast(`修复成功！恢复 ${fix.recovered} 条误删数据，清理 ${fix.deduplicated} 条重复记录`);
+        // 更新本地数据
+        if (result.pull && result.pull.merged) {
+          this.setData({
+            tokens: result.pull.merged,
+            filteredTokens: result.pull.merged.filter(t => !t.is_deleted),
+          });
+          this._filterTokens();
+          this._updateOtpMap();
+        }
+      } else {
+        this.showToast('修复失败：' + (result.error || '未知错误'), 'error');
+      }
+    } catch (err) {
+      console.error('One-time fix failed:', err);
+      this.setData({ syncStatus: 'idle' });
+      this.showToast('修复失败', 'error');
     }
   },
 
