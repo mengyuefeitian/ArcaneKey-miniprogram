@@ -326,7 +326,28 @@ Page({
     if (this.data.loggedIn) processQueue();
   },
 
-  executeDelete()      { this._doSoftDelete('已删除'); },
+  // 未登录时删除：物理删除，不入队（等同于仅本地删除）
+  executeDelete() {
+    const { deleteTarget, tokens } = this.data;
+    if (!deleteTarget) return;
+
+    const updated = tokens.filter(t => t.id !== deleteTarget.id);
+    app.globalData.tokens = updated;
+    saveTokensLocal(updated);
+
+    // 清除队列中该 token 的所有任务
+    clearTokenTasks(deleteTarget.id);
+
+    this.setData({
+      tokens: updated,
+      filteredTokens: updated.filter(t => !t.is_deleted),
+      editToken: null, deleteTarget: null, showDeleteModal: false,
+    });
+    this._filterTokens();
+    this._updateOtpMap();
+    this.showToast('已删除');
+  },
+
   executeDeleteCloud() { this._doSoftDelete('已删除(本地+云端)'); },
 
   // 仅本地删除：物理删除，清除队列任务（云端保留）
