@@ -177,6 +177,31 @@ async function getCloudDoc(db, openid) {
   return res.data.length > 0 ? res.data[0] : null;
 }
 
+// 诊断函数：查询云端所有数据
+async function debugCloudData() {
+  try {
+    const db = wx.cloud.database();
+    const openid = getOpenid();
+    console.log('[DEBUG] 当前 openid:', openid);
+
+    // 查询当前 openid 的数据
+    const myData = await getCloudDoc(db, openid);
+    console.log('[DEBUG] 当前用户云端数据:', myData);
+
+    // 查询所有数据（用于检查是否有遗漏）
+    const allData = await db.collection('user_backups').limit(20).get();
+    console.log('[DEBUG] 云端所有记录:', allData.data.length, '条');
+    allData.data.forEach((doc, i) => {
+      console.log(`[DEBUG] 记录${i}: openid=${doc.openid?.substring(0,10)}..., tokens=${doc.tokens?.length || 0}`);
+    });
+
+    return { myData, allData: allData.data };
+  } catch (err) {
+    console.error('[DEBUG] 查询失败:', err);
+    return null;
+  }
+}
+
 async function saveCloudDoc(db, doc, openid, tokens) {
   const active = tokens.filter(t => !t.is_deleted);
   const payload = {
@@ -408,4 +433,5 @@ module.exports = {
   restoreToken,
   startAutoSync,
   saveTokensLocal,
+  debugCloudData,
 };

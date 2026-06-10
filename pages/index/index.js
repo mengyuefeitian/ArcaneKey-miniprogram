@@ -14,6 +14,7 @@ const {
   queueUpdate,
   getQueue,
   saveTokensLocal,
+  debugCloudData,
 } = require('../../utils/sync');
 
 Page({
@@ -111,6 +112,8 @@ Page({
     if (gd.loggedIn) {
       this._cloudRestore().then(() => this._startAutoSync());
     }
+    // 诊断：打印云端数据状态
+    debugCloudData();
     this._totpTimer = setInterval(() => {
       const tl = timeLeft();
       this.setData({ timeLeft: tl });
