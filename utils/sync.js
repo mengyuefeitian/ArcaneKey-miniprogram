@@ -185,9 +185,43 @@ function getOpenid() {
 
 async function getCloudDoc(db, openid) {
   // 使用 _openid 查询（微信云开发自动添加的真实用户标识）
-  // 而不是 openid（应用代码设置的，之前是假的）
+  // 注意：可能返回多条记录（之前用假 openid 创建的）
   const res = await db.collection('user_backups').where({ _openid: openid }).get();
-  return res.data.length > 0 ? res.data[0] : null;
+
+  if (res.data.length === 0) return null;
+
+  // 合并所有记录的 tokens，按时间戳取最新版本
+  // 同一个 token id 在不同记录中可能有不同状态，取最新时间戳的那条
+  const allDocs = res.data.sort((a, b) =>
+    new Date(b.timestamp || 0).getTime() - new Date(a.timestamp || 0).getTime()
+  );
+
+  const tokenMap = new Map();
+  for (const doc of allDocs) {
+    for (const token of (doc.tokens || [])) {
+      const existing = tokenMap.get(token.id);
+      if (!existing) {
+        tokenMap.set(token.id, token);
+      } else {
+        // 已存在：取最新时间戳的版本（deleted_at 用于判断删除时间）
+        const existingTime = existing.deleted_at || existing.synced_at || existing.created_at || '';
+        const tokenTime = token.deleted_at || token.synced_at || token.created_at || '';
+        if (tokenTime > existingTime) {
+          tokenMap.set(token.id, token);
+        }
+      }
+    }
+  }
+
+  // 返回合并后的数据结构
+  const mergedTokens = Array.from(tokenMap.values());
+  const activeTokens = mergedTokens.filter(t => !t.is_deleted);
+  return {
+    _id: allDocs[0]._id,
+    tokens: mergedTokens,
+    active_tokens: activeTokens,
+    timestamp: allDocs[0].timestamp,
+  };
 }
 
 // 诊断函数：查询云端所有数据
