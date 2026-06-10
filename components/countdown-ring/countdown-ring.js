@@ -33,7 +33,7 @@ Component({
           }
           const canvas = res[0].node;
           const ctx = canvas.getContext('2d');
-          const dpr = wx.getSystemInfoSync().pixelRatio || 1;
+          const dpr = wx.getWindowInfo().pixelRatio || 1;
 
           // 设置 canvas 实际尺寸
           canvas.width = 34 * dpr;
