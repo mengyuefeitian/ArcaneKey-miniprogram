@@ -74,6 +74,7 @@ Page({
     showSyncModal: false,
     syncEnabled: true,  // 默认开启自动同步
     pendingUploadCount: 0,  // 待上传的新数据数量
+    appVersion: '',
   },
 
   _totpTimer: null,
@@ -109,19 +110,49 @@ Page({
       pendingSyncCount: pendingCount,
       pendingUploadCount: pendingCount,
       syncEnabled,
+      appVersion: gd.appVersion || '',
     });
     this._updateOtpMap();
     // 登录后开启云同步：先拉取（避免与自动同步竞态），再启动定时器
     if (gd.loggedIn) {
       this._cloudRestore().then(() => this._startAutoSync());
     }
-    // 诊断：打印云端数据状态
     debugCloudData();
     this._totpTimer = setInterval(() => {
       const tl = timeLeft();
       this.setData({ timeLeft: tl });
       if (tl === 30) this._updateOtpMap();
     }, 1000);
+  },
+
+  onShow() {
+    const gd = app.globalData;
+    const wasLoggedIn = this.data.loggedIn;
+
+    // 刷新登录态（静默登录异步完成后 onShow 会同步到最新状态）
+    if (gd.loggedIn !== wasLoggedIn || gd.userInfo !== this.data.userInfo) {
+      this.setData({ loggedIn: gd.loggedIn, userInfo: gd.userInfo });
+    }
+
+    // 首次登录成功（onLoad 时还未登录）：启动同步
+    if (gd.loggedIn && !wasLoggedIn) {
+      this._cloudRestore().then(() => this._startAutoSync());
+      return;
+    }
+
+    // 已登录：切回前台时触发一次增量同步
+    if (gd.loggedIn && this._autoSyncTimer) {
+      sync().then(result => {
+        const pull = result.pull || {};
+        if (pull.success && pull.merged) {
+          this.setData({ tokens: pull.merged });
+          this._filterTokens();
+          this._updateOtpMap();
+        }
+        const pending = getQueue().getPendingCount();
+        this.setData({ pendingSyncCount: pending, pendingUploadCount: pending });
+      });
+    }
   },
 
   onUnload() {
