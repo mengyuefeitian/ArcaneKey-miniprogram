@@ -226,7 +226,7 @@
           </view>
         </view>
 
-        <text class="version-text">玄钥 v1.0.0</text>
+        <text class="version-text">星枢令{{appVersion ? ' v' + appVersion : ''}}</text>
       </view>
       <view style="height:100px"/>
     </scroll-view>

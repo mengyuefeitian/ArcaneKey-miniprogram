@@ -52,31 +52,40 @@ App({
     // 初始化云开发
     wx.cloud.init({ env: 'cloud1-d6gv0hhga084dbe14' });
 
-    // 静默登录：自动获取 openid，不弹出任何授权弹窗
+    // 同步恢复登录状态（不等待云函数，页面渲染前即可用）
+    const savedUserInfo = wx.getStorageSync('ak_user_info');
+    if (savedUserInfo && savedUserInfo.name) {
+      this.globalData.userInfo = savedUserInfo;
+      this.globalData.loggedIn = true;
+    }
+
+    // 读取发布版本号（开发版返回空字符串）
+    try {
+      const acct = wx.getAccountInfoSync();
+      this.globalData.appVersion = acct.miniProgram.version || '';
+    } catch (_) {
+      this.globalData.appVersion = '';
+    }
+
+    // 异步获取 openid，补充到已恢复的 userInfo
     this._silentLogin();
   },
 
-  // 静默登录：获取真实 openid，用户可正常使用本地功能
+  // 静默登录：仅获取 openid，不再负责恢复登录状态
   async _silentLogin() {
     try {
-      // 调用云函数获取真实 openid
       const result = await wx.cloud.callFunction({ name: 'login' });
       if (result.result && result.result.success && result.result.openid) {
-        this.globalData.openid = result.result.openid;
-        console.log('[APP] 获取真实 openid 成功:', result.result.openid);
-
-        // 检查是否有已存储的用户信息
-        const savedUserInfo = wx.getStorageSync('ak_user_info');
-        if (savedUserInfo && savedUserInfo.name) {
-          this.globalData.userInfo = savedUserInfo;
-          this.globalData.loggedIn = true;
+        const openid = result.result.openid;
+        this.globalData.openid = openid;
+        // 将 openid 补充到已恢复的 userInfo，供云同步使用
+        if (this.globalData.userInfo) {
+          this.globalData.userInfo = { ...this.globalData.userInfo, openid };
+          wx.setStorageSync('ak_user_info', this.globalData.userInfo);
         }
-      } else {
-        console.log('[APP] 云函数返回异常，openid 获取失败');
       }
     } catch (err) {
       console.error('[APP] 静默登录失败:', err);
-      // 静默登录失败不影响本地功能使用
     }
   },
 
