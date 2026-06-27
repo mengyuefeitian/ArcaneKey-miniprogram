@@ -274,7 +274,7 @@
     <block wx:else>
       <view class="edit-bottom-bar">
         <view class="cancel-delete-btn-flat" bindtap="onCancelDelete">取消</view>
-        <view class="confirm-delete-btn-flat" bindtap="onDeleteToken">确认删除</view>
+        <view class="confirm-delete-btn-flat" bindtap="requestDeleteToken">确认删除</view>
       </view>
     </block>
   </view>
@@ -293,7 +293,7 @@
             <text wx:if="{{loginPrivacyAgreed}}" style="font-size:10px;color:#fff;font-weight:700">✓</text>
           </view>
           <text style="flex:1;font-size:13px;line-height:20px;color:{{loginPrivacyAgreed ? 'rgba(238,238,245,0.5)' : 'rgba(238,238,245,0.35)'}}">
-            我已阅读并同意 <text style="color:{{accentColor}};font-weight:500">《用户协议》</text> 和 <text style="color:{{accentColor}};font-weight:500">《隐私保护协议》</text>
+            我已阅读并同意 <text style="color:{{accentColor}};font-weight:500" catchtap="onOpenUserAgreement">《用户协议》</text> 和 <text style="color:{{accentColor}};font-weight:500" catchtap="onOpenPrivacyPolicy">《隐私保护协议》</text>
           </text>
         </view>
       </view>

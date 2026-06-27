@@ -117,7 +117,6 @@ Page({
     if (gd.loggedIn) {
       this._cloudRestore().then(() => this._startAutoSync());
     }
-    debugCloudData();
     this._totpTimer = setInterval(() => {
       const tl = timeLeft();
       this.setData({ timeLeft: tl });
@@ -151,6 +150,8 @@ Page({
         }
         const pending = getQueue().getPendingCount();
         this.setData({ pendingSyncCount: pending, pendingUploadCount: pending });
+      }).catch(err => {
+        console.warn('[onShow] sync failed:', err);
       });
     }
   },
@@ -165,7 +166,7 @@ Page({
     return {
       title: '星枢令 - TOTP 身份验证器',
       path: '/pages/index/index',
-      imageUrl: '/images/logo-share.jpg'
+      imageUrl: '/images/logo-share.png'
     };
   },
 
@@ -206,7 +207,7 @@ Page({
     if (screen === 'scan' && !this.data.loggedIn) {
       wx.showModal({
         title: '请先登录',
-        content: '添加账号需要先登录。登录后可使用云端同步功能。',
+        content: '添加账号需要先使用微信号登录，登录后即可添加和管理您的验证账号。',
         confirmText: '去登录',
         cancelText: '取消',
         success: (res) => {
@@ -404,11 +405,6 @@ Page({
     this.showToast('已删除(仅本地)');
   },
 
-  // 本地+云端删除：与 executeDelete 相同（软删除自动同步）
-  executeDeleteCloud() {
-    this.executeDelete();
-    this.showToast('已删除(本地+云端)');
-  },
 
   cancelDelete() {
     this.setData({ deleteTarget: null, showDeleteModal: false });
@@ -761,6 +757,14 @@ Page({
       const randomNickname = this._generateRandomNickname();
       this.setData({ loginNickname: randomNickname });
     }
+  },
+
+  onOpenUserAgreement() {
+    wx.navigateTo({ url: '/pages/agreement/agreement?type=user' });
+  },
+
+  onOpenPrivacyPolicy() {
+    wx.navigateTo({ url: '/pages/agreement/agreement?type=privacy' });
   },
 
   // 生成随机昵称

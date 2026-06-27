@@ -46,11 +46,8 @@ Page({
     this.setData({ images: this.data.images.filter((_, i) => i !== idx) });
   },
 
-  onSubmit() {
-    // 防止重复提交
-    if (this.data.sending) {
-      return;
-    }
+  async onSubmit() {
+    if (this.data.sending) return;
 
     const { type, content, images, contact, canSubmit } = this.data;
     if (!canSubmit) {
@@ -58,6 +55,25 @@ Page({
       return;
     }
     this.setData({ sending: true });
+
+    // 内容安全检测
+    try {
+      const checkResult = await wx.cloud.callFunction({
+        name: 'secCheck',
+        data: {
+          content,
+          openid: app.globalData.openid || '',
+        },
+      });
+      if (checkResult.result && checkResult.result.safe === false) {
+        this.setData({ sending: false });
+        wx.showToast({ title: checkResult.result.reason || '内容包含违规信息', icon: 'none', duration: 3000 });
+        return;
+      }
+    } catch (err) {
+      // 检测接口异常时放行，不阻断用户提交
+      console.warn('[secCheck] call failed, skipping:', err);
+    }
 
     const uploadPromises = images.map((path, i) =>
       wx.cloud.uploadFile({ cloudPath: `feedback/${Date.now()}_${i}.jpg`, filePath: path })
@@ -74,7 +90,7 @@ Page({
             content,
             contactInfo: contact,
             nickName: app.globalData.userInfo?.name || '',
-            imageUrls
+            imageUrls,
           },
         });
       })
@@ -85,7 +101,8 @@ Page({
       })
       .catch((err) => {
         this.setData({ sending: false });
-        wx.showToast({ title: '提交失败：' + (err.message || '网络错误'), icon: 'none', duration: 3000 });
+        console.error('[feedback] submit failed:', err);
+        wx.showToast({ title: '提交失败，请稍后重试', icon: 'none', duration: 3000 });
       });
   },
 });
