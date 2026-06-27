@@ -274,7 +274,7 @@
     <block wx:else>
       <view class="edit-bottom-bar">
         <view class="cancel-delete-btn-flat" bindtap="onCancelDelete">取消</view>
-        <view class="confirm-delete-btn-flat" bindtap="onDeleteToken">确认删除</view>
+        <view class="confirm-delete-btn-flat" bindtap="requestDeleteToken">确认删除</view>
       </view>
     </block>
   </view>
@@ -286,15 +286,19 @@
       <text class="modal-title">设置头像昵称</text>
     </view>
     <view style="padding:0 20px;flex:1;display:flex;flex-direction:column;gap:16px">
-      <!-- 隐私协议同意 -->
+      <!-- 隐私协议同意：勾选框始终是 view，未同意时叠加透明授权按钮承载隐私授权 -->
       <view style="padding-top:16px">
-        <view style="display:flex;align-items:center;gap:8px;padding:12px;background:#191920;border-radius:12px;border:1px solid {{loginPrivacyAgreed ? accentColor + '30' : 'rgba(255,255,255,0.05)'}}" bindtap="onLoginPrivacyToggle">
-          <view style="width:20px;height:20px;min-width:20px;border-radius:4px;display:flex;align-items:center;justify-content:center;border:1.5px solid {{loginPrivacyAgreed ? accentColor : 'rgba(238,238,245,0.3)'}};background:{{loginPrivacyAgreed ? accentColor : 'transparent'}}">
+        <view class="privacy-row" style="border:1px solid {{loginPrivacyAgreed ? accentColor + '30' : 'rgba(255,255,255,0.05)'}}" bindtap="{{loginPrivacyAgreed ? 'onLoginPrivacyUncheck' : ''}}">
+          <view class="privacy-checkbox" style="{{loginPrivacyAgreed ? 'border-color:' + accentColor + ';background:' + accentColor : ''}}">
             <text wx:if="{{loginPrivacyAgreed}}" style="font-size:10px;color:#fff;font-weight:700">✓</text>
           </view>
           <text style="flex:1;font-size:13px;line-height:20px;color:{{loginPrivacyAgreed ? 'rgba(238,238,245,0.5)' : 'rgba(238,238,245,0.35)'}}">
-            我已阅读并同意 <text style="color:{{accentColor}};font-weight:500">《用户协议》</text> 和 <text style="color:{{accentColor}};font-weight:500">《隐私保护协议》</text>
+            我已阅读并同意 <text style="color:{{accentColor}};font-weight:500" catchtap="onOpenUserAgreement">《用户协议》</text> 和 <text style="color:{{accentColor}};font-weight:500" catchtap="onOpenPrivacyPolicy">《隐私保护协议》</text>
           </text>
+          <button wx:if="{{!loginPrivacyAgreed}}"
+            open-type="agreePrivacyAuthorization"
+            bindagreeprivacyauthorization="onLoginPrivacyAgree"
+            class="privacy-tap-btn"></button>
         </view>
       </view>
 
@@ -512,6 +516,22 @@
       <text style="font-size: 12px; color: rgba(238,238,245,0.35); margin-top: 12px; text-align: center; display: block;">支持 Google Authenticator / Authy 等 TOTP 应用扫描</text>
       <view style="margin-top: 20px;">
         <view class="delete-btn cancel" style="width: 100%;" bindtap="onCloseQRCode">关闭</view>
+      </view>
+    </view>
+  </view>
+
+  <!-- ═══ PRIVACY AUTHORIZATION MODAL ═══ -->
+  <view wx:if="{{showPrivacyModal}}" class="delete-modal-overlay">
+    <view class="delete-dialog" style="padding:24px 20px">
+      <text class="delete-title">隐私保护提示</text>
+      <text class="delete-content" style="margin-bottom:20px">本应用在此功能中需要收集您的相关信息。继续使用前请阅读<text style="color:{{accentColor}}">《用户协议》</text>和<text style="color:{{accentColor}}">《隐私保护协议》</text>。</text>
+      <view class="delete-btns">
+        <view class="delete-btn cancel" bindtap="onPrivacyDisagree">不同意</view>
+        <button id="agree-privacy-btn"
+          class="delete-btn confirm"
+          style="background:{{accentColor}};border:none;color:#fff;font-size:15px;border-radius:10px;line-height:normal;padding:0"
+          open-type="agreePrivacyAuthorization"
+          bindagreeprivacyauthorization="onPrivacyAgree">同意</button>
       </view>
     </view>
   </view>

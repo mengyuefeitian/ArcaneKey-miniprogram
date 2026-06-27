@@ -75,6 +75,7 @@ Page({
     syncEnabled: true,  // 默认开启自动同步
     pendingUploadCount: 0,  // 待上传的新数据数量
     appVersion: '',
+    showPrivacyModal: false,
   },
 
   _totpTimer: null,
@@ -117,7 +118,11 @@ Page({
     if (gd.loggedIn) {
       this._cloudRestore().then(() => this._startAutoSync());
     }
-    debugCloudData();
+    // 注册隐私授权回调：app.js 收到微信拦截时通知本页弹出真实按钮弹窗
+    app._onNeedPrivacy = () => {
+      this.setData({ showPrivacyModal: true });
+    };
+
     this._totpTimer = setInterval(() => {
       const tl = timeLeft();
       this.setData({ timeLeft: tl });
@@ -151,6 +156,8 @@ Page({
         }
         const pending = getQueue().getPendingCount();
         this.setData({ pendingSyncCount: pending, pendingUploadCount: pending });
+      }).catch(err => {
+        console.warn('[onShow] sync failed:', err);
       });
     }
   },
@@ -165,7 +172,7 @@ Page({
     return {
       title: '星枢令 - TOTP 身份验证器',
       path: '/pages/index/index',
-      imageUrl: '/images/logo-share.jpg'
+      imageUrl: '/images/logo-share.png'
     };
   },
 
@@ -206,7 +213,7 @@ Page({
     if (screen === 'scan' && !this.data.loggedIn) {
       wx.showModal({
         title: '请先登录',
-        content: '添加账号需要先登录。登录后可使用云端同步功能。',
+        content: '添加账号需要先使用微信号登录，登录后即可添加和管理您的验证账号。',
         confirmText: '去登录',
         cancelText: '取消',
         success: (res) => {
@@ -410,11 +417,6 @@ Page({
     this.showToast('已删除(仅本地)');
   },
 
-  // 本地+云端删除：与 executeDelete 相同（软删除自动同步）
-  executeDeleteCloud() {
-    this.executeDelete();
-    this.showToast('已删除(本地+云端)');
-  },
 
   cancelDelete() {
     this.setData({ deleteTarget: null, showDeleteModal: false });
@@ -735,10 +737,10 @@ Page({
   },
 
   onLogout() {
-    // 只清除登录状态，保留用户信息（下次登录可自动填充）
     app.globalData.loggedIn = false;
-    // 不清除userInfo，保留记忆功能
-    this.setData({ loggedIn: false });
+    app.globalData.userInfo = null;
+    wx.removeStorageSync('ak_user_info');
+    this.setData({ loggedIn: false, userInfo: null });
     this.showToast('已退出登录');
   },
 
@@ -757,16 +759,25 @@ Page({
     });
   },
 
-  // 登录隐私协议开关（同意后自动生成随机昵称）
-  onLoginPrivacyToggle() {
-    const newAgreed = !this.data.loginPrivacyAgreed;
-    this.setData({ loginPrivacyAgreed: newAgreed });
-
-    // 用户首次同意协议时，如果没有昵称且没有保存的信息，自动生成随机昵称
-    if (newAgreed && !this.data.loginNickname && !app.globalData.userInfo) {
-      const randomNickname = this._generateRandomNickname();
-      this.setData({ loginNickname: randomNickname });
+  // 用户通过微信 agreePrivacyAuthorization 按钮同意隐私协议，同时完成平台授权
+  onLoginPrivacyAgree() {
+    this.setData({ loginPrivacyAgreed: true });
+    if (!this.data.loginNickname && !app.globalData.userInfo) {
+      this.setData({ loginNickname: this._generateRandomNickname() });
     }
+  },
+
+  // 用户取消勾选（仅 UI 层）
+  onLoginPrivacyUncheck() {
+    this.setData({ loginPrivacyAgreed: false });
+  },
+
+  onOpenUserAgreement() {
+    wx.navigateTo({ url: '/pages/agreement/agreement?type=user' });
+  },
+
+  onOpenPrivacyPolicy() {
+    wx.navigateTo({ url: '/pages/agreement/agreement?type=privacy' });
   },
 
   // 生成随机昵称
@@ -840,6 +851,25 @@ Page({
 
   onCloseLogin() {
     this.setData({ showLoginModal: false, loginAvatar: '', loginNickname: '', loginPrivacyAgreed: false });
+  },
+
+  // 隐私授权弹窗处理（需配合 WXML 中 open-type="agreePrivacyAuthorization" 按钮）
+  onPrivacyAgree() {
+    const resolve = app.globalData._privacyResolve;
+    if (resolve) {
+      resolve({ buttonId: 'agree-privacy-btn', event: 'agree' });
+      app.globalData._privacyResolve = null;
+    }
+    this.setData({ showPrivacyModal: false });
+  },
+
+  onPrivacyDisagree() {
+    const resolve = app.globalData._privacyResolve;
+    if (resolve) {
+      resolve({ event: 'disagree' });
+      app.globalData._privacyResolve = null;
+    }
+    this.setData({ showPrivacyModal: false });
   },
 
   // ── Account Info ────────────────────────────────────────────
