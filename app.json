@@ -1,7 +1,8 @@
 {
   "pages": [
     "pages/index/index",
-    "pages/feedback/feedback"
+    "pages/feedback/feedback",
+    "pages/agreement/agreement"
   ],
   "window": {
     "backgroundTextStyle": "light",

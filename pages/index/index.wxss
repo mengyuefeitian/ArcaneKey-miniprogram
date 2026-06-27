@@ -436,6 +436,46 @@
   line-height: normal;
 }
 .wechat-login-btn::after { border: none; }
+/* 整行用 view 控制布局，两个状态结构完全相同，宽度绝对一致 */
+.privacy-row {
+  position: relative;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  width: 100%;
+  box-sizing: border-box;
+  padding: 12px;
+  background: #191920;
+  border-radius: 12px;
+}
+/* 勾选框：始终是 view，渲染稳定，20×20 */
+.privacy-checkbox {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  min-width: 20px;
+  border-radius: 4px;
+  border: 1.5px solid rgba(238,238,245,0.3);
+  background: transparent;
+  margin-right: 8px;
+  flex-shrink: 0;
+}
+/* 透明授权按钮：绝对定位脱离文档流，微信 button 默认样式无法拉伸它；opacity:0 隐藏渲染 */
+.privacy-tap-btn {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 48px;
+  padding: 0;
+  margin: 0;
+  opacity: 0;
+  background: transparent;
+}
+.privacy-tap-btn::after { border: none; }
 .wechat-login-btn-disabled {
   width: 100%;
   padding: 14px;

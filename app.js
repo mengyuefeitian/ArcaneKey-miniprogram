@@ -52,6 +52,14 @@ App({
     // 初始化云开发
     wx.cloud.init({ env: 'cloud1-d6gv0hhga084dbe14' });
 
+    // 隐私授权全局拦截器：存 resolve，通知当前页面弹出含真实按钮的授权弹窗
+    wx.onNeedPrivacyAuthorization((resolve) => {
+      this.globalData._privacyResolve = resolve;
+      if (typeof this._onNeedPrivacy === 'function') {
+        this._onNeedPrivacy();
+      }
+    });
+
     // 同步恢复登录状态（不等待云函数，页面渲染前即可用）
     const savedUserInfo = wx.getStorageSync('ak_user_info');
     if (savedUserInfo && savedUserInfo.name) {
