@@ -7,3 +7,14 @@
   font-family: system-ui, -apple-system, sans-serif;
   letter-spacing: -0.5px;
 }
+
+.logo-icon-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.logo-icon-img {
+  flex-shrink: 0;
+}
