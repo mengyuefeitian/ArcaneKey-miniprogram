@@ -1,7 +1,7 @@
 <view class="card">
   <!-- Upper row: edit -->
   <view class="card-top" bindtap="onEditTap">
-    <logo brand="{{token.brand}}" size="{{42}}"/>
+    <logo brand="{{token.brand}}" account="{{token.account}}" size="{{42}}"/>
     <view class="card-info">
       <text class="brand">{{token.brand}}</text>
       <text class="account">{{token.account}}</text>

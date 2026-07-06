@@ -126,7 +126,7 @@
 
           <!-- Preview -->
           <view wx:if="{{scanForm.brand}}" class="preview-row">
-            <logo brand="{{scanForm.brand}}" size="{{36}}"/>
+            <logo brand="{{scanForm.brand}}" account="{{scanForm.account}}" size="{{36}}"/>
             <view style="flex:1">
               <text style="font-size:14px;color:#eeeef5;font-weight:600">{{scanForm.brand}}</text>
               <text wx:if="{{scanForm.account}}" style="display:block;font-size:12px;color:rgba(238,238,245,0.4);margin-top:2px">{{scanForm.account}}</text>
@@ -240,7 +240,7 @@
     </view>
     <view style="padding:0 20px;flex:1;overflow-y:auto">
       <view style="display:flex;justify-content:center;padding:20px 0 8px">
-        <logo brand="{{editForm.brand || editToken.brand || ''}}" size="{{64}}"/>
+        <logo brand="{{editForm.brand || editToken.brand || ''}}" account="{{editForm.account || editToken.account || ''}}" size="{{64}}"/>
       </view>
       <view class="field-wrap">
         <text class="field-label">品牌名称</text>

@@ -1,1 +1,4 @@
-<view class="logo-wrap" style="{{style}}">{{letter}}</view>
+<view class="logo-wrap" style="{{style}}" wx:if="{{!iconPath}}">{{letter}}</view>
+<view class="logo-icon-wrap" style="{{iconWrapStyle}}" wx:else>
+  <image class="logo-icon-img" src="{{iconPath}}" style="{{iconImgStyle}}" mode="aspectFit"/>
+</view>
