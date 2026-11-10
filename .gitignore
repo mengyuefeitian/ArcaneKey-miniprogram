@@ -12,3 +12,12 @@ $RECYCLE.BIN/
 
 # Node.js
 node_modules/
+
+# 私钥等敏感文件（禁止进入公开仓库）
+*.key
+*.pem
+*.p12
+
+# 本地协作 / AI 工作记录（保留在本地，不入库）
+.workbuddy/
+小程序项目档案.md

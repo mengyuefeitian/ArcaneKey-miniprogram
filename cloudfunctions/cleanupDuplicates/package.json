@@ -1,0 +1,9 @@
+{
+  "name": "cleanupDuplicates",
+  "version": "1.0.0",
+  "description": "物理删除云端数据库中的重复和无效数据",
+  "main": "index.js",
+  "dependencies": {
+    "wx-server-sdk": "~2.6.3"
+  }
+}
